@@ -1,0 +1,11 @@
+# ===================================
+#  Field Definitions
+# ===================================
+
+fields:
+    purge_days:
+        label: 'Manter registros por x dias'
+        comment: 'Número de dias antes que os logs de envios sejam limpos'
+        span: auto
+        default: 7
+        type: number

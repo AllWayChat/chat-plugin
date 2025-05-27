@@ -1,5 +1,5 @@
-# AllWay Chat Plugin
+# Allway Chat Plugin
 
-Plugin de integração com sistema de chat AllWay para OctoberCMS.
+Plugin de integração com sistema de chat Allway para OctoberCMS.
 
-Permite envio de mensagens através do sistema AllWay Chat.
+Permite envio de mensagens através do sistema Allway Chat.

@@ -1,0 +1,22 @@
+plugin:
+    name: Allway Chat - Sistema de Mensageria
+    description: 'Sistema de chat e notificações Allway'
+    author: 'Allway'
+    icon: oc-icon-comments
+navigation:
+permissions:
+    allway.chat.settings:
+        tab: Allway Chat
+        label: 'Configurações'
+    allway.chat.logs:
+        tab: Allway Chat
+        label: 'Registros de envios'
+    allway.chat.accounts:
+        tab: Allway Chat
+        label: 'Contas Allway'
+    allway.chat.accounts.create:
+        tab: Allway Chat
+        label: 'Criar conta'
+    allway.chat.accounts.send_test:
+        tab: Allway Chat
+        label: 'Enviar mensagem de teste'

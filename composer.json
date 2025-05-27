@@ -1,0 +1,20 @@
+{
+    "name": "allway/chat-plugin",
+    "description": "Allway Chat Plugin",
+    "type": "october-plugin",
+    "keywords": [
+        "allway",
+        "chat",
+        "messaging",
+        "laravel"
+    ],
+    "license": "MIT",
+    "authors": [
+        {
+            "name": "Kallef Alexandre",
+            "email": "kallef@orbitaldev.com.br"
+        }
+    ],
+    "minimum-stability": "dev",
+    "prefer-stable": true
+}

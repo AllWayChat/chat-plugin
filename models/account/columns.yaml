@@ -1,0 +1,28 @@
+columns:
+    is_active:
+        label: Status
+        type: partial
+        path: $/allway/chat/controllers/accounts/_status.php
+        searchable: false
+        sortable: true
+    name:
+        label: Nome da Conta
+        type: text
+        searchable: true
+        sortable: true
+    server_url:
+        label: Servidor
+        type: text
+        searchable: true
+        sortable: true
+    account_id:
+        label: ID da Conta
+        type: number
+        searchable: true
+        sortable: true
+    action:
+        label: Ação
+        type: partial
+        searchable: false
+        sortable: false
+        clickable: false

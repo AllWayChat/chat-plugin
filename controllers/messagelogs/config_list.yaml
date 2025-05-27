@@ -1,0 +1,22 @@
+# ===================================
+#  List Behavior Config
+# ===================================
+
+title: Registros de Mensagens
+list: $/allway/chat/models/messagelog/columns.yaml
+modelClass: Allway\Chat\Models\MessageLog
+
+# Link URL for each record
+recordUrl: allway/chat/messagelogs/preview/:id
+
+noRecordsMessage: 'backend::lang.list.no_records'
+recordsPerPage: 20
+showSetup: true
+showCheckboxes: true
+defaultSort:
+    column: sent_at
+    direction: desc
+toolbar:
+    buttons: list_toolbar
+    search:
+        prompt: 'backend::lang.list.search_prompt'

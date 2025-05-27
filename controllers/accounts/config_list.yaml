@@ -1,0 +1,22 @@
+# ===================================
+#  List Behavior Config
+# ===================================
+
+title: Contas Allway
+list: $/allway/chat/models/account/columns.yaml
+modelClass: Allway\Chat\Models\Account
+
+# Link URL for each record
+recordUrl: allway/chat/accounts/update/:id
+
+noRecordsMessage: 'backend::lang.list.no_records'
+recordsPerPage: 20
+showSetup: true
+showCheckboxes: false
+defaultSort:
+    column: created_at
+    direction: desc
+toolbar:
+    buttons: list_toolbar
+    search:
+        prompt: 'backend::lang.list.search_prompt'

@@ -1,0 +1,12 @@
+1.0.1: 
+    - Primeira versão do Allway Chat - Sistema de Mensageria
+    - create_allway_accounts_table.php
+1.0.2:
+    - Criando tabela de logs de mensagens do Allway Chat
+    - create_allway_message_logs_table.php
+1.0.3:
+    - Removendo restrição única para permitir múltiplas contas com mesmo servidor
+    - remove_unique_constraint.php
+1.0.4:
+    - Removendo campo message_type desnecessário
+    - remove_message_type_column.php

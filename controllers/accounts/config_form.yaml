@@ -1,0 +1,27 @@
+# ===================================
+#  Form Behavior Config
+# ===================================
+
+# Record name
+name: Conta Allway
+
+# Model Form Field configuration
+form: $/allway/chat/models/account/fields.yaml
+
+# Model Class name
+modelClass: Allway\Chat\Models\Account
+
+# Default redirect location
+defaultRedirect: allway/chat/accounts
+
+redirect: allway/chat/accounts
+
+# Update page
+update:
+    title: backend::lang.form.update_title
+    redirect: allway/chat/accounts
+    redirectClose: allway/chat/accounts
+
+# Preview page
+preview:
+    title: backend::lang.form.preview_title

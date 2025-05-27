@@ -1,0 +1,19 @@
+# ===================================
+#  Form Behavior Config
+# ===================================
+
+# Record name
+name: Registro de Mensagens
+
+# Model Form Field configuration
+form: $/allway/chat/models/messagelog/fields.yaml
+
+# Model Class name
+modelClass: Allway\Chat\Models\MessageLog
+
+# Default redirect location
+defaultRedirect: allway/chat/messagelogs
+
+# Preview page
+preview:
+    title: Exibir Registro de Mensagens

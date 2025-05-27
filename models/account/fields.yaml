@@ -1,0 +1,29 @@
+# ===================================
+#  Form Field Definitions
+# ===================================
+
+fields:
+    is_active:
+        label: Ativo
+        span: storm
+        type: switch
+        cssClass: col-md-2
+    name:
+        label: Nome da Conta
+        span: storm
+        cssClass: col-md-10
+    server_url:
+        label: URL do Servidor
+        span: storm
+        cssClass: col-md-6
+        placeholder: 'https://chat.exemplo.com'
+    account_id:
+        label: ID da Conta
+        span: storm
+        cssClass: col-md-6
+        type: number
+    token:
+        label: Token de Acesso
+        span: storm
+        cssClass: col-md-12
+        type: sensitive

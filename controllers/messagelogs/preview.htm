@@ -1,0 +1,28 @@
+<?php Block::put('breadcrumb') ?>
+<ul>
+    <li><a href="<?= Backend::url('allway/chat/messagelogs') ?>">Registro de Mensagens</a></li>
+    <li><?= e(trans($this->pageTitle)) ?></li>
+</ul>
+<?php Block::endPut() ?>
+
+<?php Block::put('body') ?>
+<?php if (!$this->fatalError): ?>
+
+<div class="form-preview">
+    <?= $this->formRenderPreview() ?>
+</div>
+
+<?php else: ?>
+
+<p class="flash-message static error"><?= e($this->fatalError) ?></p>
+<p><a href="<?= Backend::url('allway/chat/messagelogs') ?>" class="btn btn-light">Retornar</a></p>
+
+<?php endif ?>
+<?php Block::endPut() ?>
+
+<?php Block::put('toolbar_actions') ?>
+<div class="loading-indicator-container">
+    <a class="btn btn-text"
+       href="<?= Backend::url('allway/chat/messagelogs') ?>"><?= e(trans('backend::lang.form.cancel')) ?></a>
+</div>
+<?php Block::endPut() ?>

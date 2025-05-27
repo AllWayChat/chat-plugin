@@ -1,0 +1,41 @@
+# ===================================
+#  Form Field Definitions
+# ===================================
+
+fields:
+    account:
+        label: Conta
+        span: storm
+        cssClass: col-md-5
+        type: relation
+    to_contact:
+        label: Destinatário
+        span: storm
+        cssClass: col-md-7
+    sent_at:
+        label: Data Envio
+        type: datepicker
+        span: storm
+        cssClass: col-md-12
+    conversation_id:
+        label: ID da Conversa
+        span: storm
+        cssClass: col-md-6
+        readOnly: true
+    allway_message_id:
+        label: ID da Mensagem
+        span: storm
+        cssClass: col-md-6
+        readOnly: true
+    content:
+        label: Conteúdo
+        type: partial
+        span: storm
+        cssClass: col-md-12
+        path: $/allway/chat/controllers/messagelogs/_data_dump.php
+    error:
+        label: Erro
+        type: partial
+        span: storm
+        cssClass: col-md-12
+        path: $/allway/chat/controllers/messagelogs/_data_dump.php

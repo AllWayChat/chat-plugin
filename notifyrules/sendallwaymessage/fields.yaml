@@ -1,0 +1,71 @@
+# ===================================
+#  Field Definitions
+# ===================================
+
+fields:
+    account:
+        label: Conta Allway
+        type: dropdown
+        placeholder: 'Selecione uma conta Allway'
+        comment: 'Selecione a conta Allway para enviar a mensagem'
+    inbox:
+        label: Canal
+        type: dropdown
+        placeholder: 'Primeiro selecione uma conta'
+        comment: 'Selecione o canal/inbox para enviar a mensagem'
+        dependsOn: account
+    contact_identifier:
+        label: Identificador do contato
+        type: text
+        comment: 'Identificador do contato (email, telefone, etc.). Suporta variáveis Twig.'
+    contact_name:
+        label: Nome do contato
+        type: text
+        comment: 'Nome do contato (opcional). Suporta variáveis Twig.'
+    message_type:
+        label: Tipo de mensagem
+        type: dropdown
+        comment: 'Selecione o tipo de mensagem a ser enviada'
+        default: text
+    text:
+        label: Texto da mensagem
+        type: textarea
+        size: large
+        comment: 'Conteúdo da mensagem de texto. Suporta variáveis Twig.'
+        trigger:
+            action: show
+            field: message_type
+            condition: value[text]
+    image:
+        label: URL da imagem
+        type: text
+        comment: 'URL pública da imagem a ser enviada. Suporta variáveis Twig.'
+        trigger:
+            action: show
+            field: message_type
+            condition: value[image]
+    document:
+        label: URL do arquivo
+        type: text
+        comment: 'URL pública do arquivo a ser enviado. Suporta variáveis Twig.'
+        trigger:
+            action: show
+            field: message_type
+            condition: value[document]
+    document_filename:
+        label: Nome do arquivo
+        type: text
+        comment: 'Nome do arquivo (opcional). Suporta variáveis Twig.'
+        trigger:
+            action: show
+            field: message_type
+            condition: value[document]
+    caption:
+        label: Legenda
+        type: textarea
+        size: small
+        comment: 'Legenda para imagem ou arquivo (opcional). Suporta variáveis Twig.'
+        trigger:
+            action: show
+            field: message_type
+            condition: value[image] || value[document] 

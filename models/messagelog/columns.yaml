@@ -1,0 +1,27 @@
+columns:
+    sent_at:
+        label: Data Envio
+        type: datetime
+        searchable: true
+    status:
+        label: Status
+        type: partial
+        searchable: false
+        sortable: false
+    account:
+        label: Conta
+        relation: account
+        select: name
+        searchable: true
+        sortable: false
+    to_contact:
+        label: Destinatário
+        type: text
+        searchable: true
+        sortable: false
+    action:
+        label: Ação
+        type: partial
+        searchable: false
+        sortable: false
+        clickable: false
