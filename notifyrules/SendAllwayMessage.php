@@ -1,7 +1,7 @@
 <?php namespace Allway\Chat\NotifyRules;
 
-use Allway\Chat\Classes\Helpers\Lazy;
 use Allway\Chat\Classes\AllwayService;
+use Allway\Chat\Classes\Helpers\Lazy;
 use Allway\Chat\Models\Account;
 use RainLab\Notify\Classes\ActionBase;
 
@@ -51,28 +51,44 @@ class SendAllwayMessage extends ActionBase
             return;
         }
 
-        $contactIdentifier = Lazy::twigRawParser((string)$this->host->contact_identifier, $params);
-        $contactName = Lazy::twigRawParser((string)($this->host->contact_name ?? ''), $params);
+        $params = $params ?: [];
+        $data = [];
+
+        $extra_php_code = Lazy::twigRawParser((string) $this->host->extra_php_code, $params);
+        if ($extra_php_code) {
+            foreach ($params as $key => $value) {
+                $$key = $value;
+            }
+            eval("$extra_php_code");
+            foreach ($params as $key => $value) {
+                unset($$key);
+            }
+        }
+
+        $data = $params + $data;
+
+        $contactIdentifier = Lazy::twigRawParser((string)$this->host->contact_identifier, $data);
+        $contactName = Lazy::twigRawParser((string)($this->host->contact_name ?? ''), $data);
         $inboxId = (int)$this->host->inbox;
         $messageType = (string)($this->host->message_type ?? 'text');
 
         try {
             switch ($messageType) {
                 case 'text':
-                    $content = Lazy::twigRawParser((string)$this->host->text, $params);
+                    $content = Lazy::twigRawParser((string)$this->host->text, $data);
                     AllwayService::sendText($account, $contactIdentifier, $content, $inboxId, $contactName);
                     break;
 
                 case 'image':
-                    $imageUrl = Lazy::twigRawParser((string)$this->host->image, $params);
-                    $caption = Lazy::twigRawParser((string)($this->host->caption ?? ''), $params);
+                    $imageUrl = Lazy::twigRawParser((string)$this->host->image, $data);
+                    $caption = Lazy::twigRawParser((string)($this->host->caption ?? ''), $data);
                     AllwayService::sendImage($account, $contactIdentifier, $imageUrl, $inboxId, $contactName, $caption);
                     break;
 
                 case 'document':
-                    $documentUrl = Lazy::twigRawParser((string)$this->host->document, $params);
-                    $caption = Lazy::twigRawParser((string)($this->host->caption ?? ''), $params);
-                    $filename = Lazy::twigRawParser((string)($this->host->document_filename ?? ''), $params);
+                    $documentUrl = Lazy::twigRawParser((string)$this->host->document, $data);
+                    $caption = Lazy::twigRawParser((string)($this->host->caption ?? ''), $data);
+                    $filename = Lazy::twigRawParser((string)($this->host->document_filename ?? ''), $data);
                     AllwayService::sendDocument($account, $contactIdentifier, $documentUrl, $inboxId, $contactName, $caption, $filename);
                     break;
             }

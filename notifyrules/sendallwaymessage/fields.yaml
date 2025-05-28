@@ -68,4 +68,12 @@ fields:
         trigger:
             action: show
             field: message_type
-            condition: value[image] || value[document] 
+            condition: value[image] || value[document]
+
+    extra_php_code:
+        label: Código PHP Extra
+        type: codeeditor
+        language: php
+        size: large
+        commentHtml: true
+        comment: "Em PHP. Suporta as variáveis disponíveis e pode ser alterado o <strong>$params</strong> do evento."
