@@ -10,13 +10,13 @@ class SendAllwayMessage extends ActionBase
     public function defineValidationRules()
     {
         return [
-            'account'           => 'required',
-            'inbox'             => 'required',
-            'contact_identifier' => 'required',
-            'message_type'      => 'required|in:text,image,document',
-            'text'              => 'required_if:message_type,text',
-            'image'             => 'required_if:message_type,image',
-            'document'          => 'required_if:message_type,document',
+            'account'        => 'required',
+            'inbox_id'       => 'required',
+            'contact'        => 'required',
+            'message_type'   => 'required|in:text,image,document',
+            'text'           => 'required_if:message_type,text',
+            'image_url'      => 'required_if:message_type,image',
+            'document_url'   => 'required_if:message_type,document',
         ];
     }
 
@@ -38,9 +38,31 @@ class SendAllwayMessage extends ActionBase
     {
         $messageType = $this->host->message_type ?? 'text';
         $messageTypeLabel = $this->getMessageTypeOptions()[$messageType] ?? $messageType;
-        $contactIdentifier = $this->host->contact_identifier ?? '';
-
-        return 'Enviar ' . $messageTypeLabel . ' para: ' . $contactIdentifier;
+        $contact = $this->host->contact ?? '';
+        $conversationControl = $this->host->conversation_control ?? 'default';
+        
+        $text = 'Enviar ' . $messageTypeLabel . ' para: ' . $contact;
+        
+        // Adicionar informação sobre o controle de conversa se não for padrão
+        if ($conversationControl !== 'default') {
+            $controlLabels = [
+                'reuse' => 'reutilizando conversa',
+                'force_new' => 'criando nova conversa',
+                'specific' => 'na conversa específica'
+            ];
+            
+            if (isset($controlLabels[$conversationControl])) {
+                $text .= ' (' . $controlLabels[$conversationControl];
+                
+                if ($conversationControl === 'specific' && !empty($this->host->conversation_id)) {
+                    $text .= ': ' . $this->host->conversation_id;
+                }
+                
+                $text .= ')';
+            }
+        }
+        
+        return $text;
     }
 
     public function triggerAction($params)
@@ -67,29 +89,69 @@ class SendAllwayMessage extends ActionBase
 
         $data = $params + $data;
 
-        $contactIdentifier = Lazy::twigRawParser((string)$this->host->contact_identifier, $data);
+        $contactIdentifier = Lazy::twigRawParser((string)$this->host->contact, $data);
         $contactName = Lazy::twigRawParser((string)($this->host->contact_name ?? ''), $data);
-        $inboxId = (int)$this->host->inbox;
+        $inboxId = (int)$this->host->inbox_id;
         $messageType = (string)($this->host->message_type ?? 'text');
+
+        $conversationControl = (string)($this->host->conversation_control ?? 'default');
+        $conversationIdRaw = Lazy::twigRawParser((string)($this->host->conversation_id ?? ''), $data);
+        $conversationId = !empty($conversationIdRaw) ? (int)$conversationIdRaw : null;
+
+        $contactCustomAttributes = [];
+        $conversationCustomAttributes = [];
+        $customAttributes = $this->host->custom_attributes ?? [];
+        
+        if (is_array($customAttributes)) {
+            foreach ($customAttributes as $attr) {
+                if (!empty($attr['key']) && isset($attr['value'])) {
+                    $key = Lazy::twigRawParser((string)$attr['key'], $data);
+                    $value = Lazy::twigRawParser((string)$attr['value'], $data);
+                    $type = $attr['type'] ?? 'contact';
+                    
+                    if ($type === 'contact') {
+                        $contactCustomAttributes[$key] = $value;
+                    } else if ($type === 'conversation') {
+                        $conversationCustomAttributes[$key] = $value;
+                    }
+                }
+            }
+        }
+
+        $forceNewConversation = false;
+        $specificConversationId = null;
+        
+        switch ($conversationControl) {
+            case 'force_new':
+                $forceNewConversation = true;
+                break;
+            case 'specific':
+                $specificConversationId = $conversationId;
+                break;
+            case 'reuse':
+            case 'default':
+            default:
+                break;
+        }
 
         try {
             switch ($messageType) {
                 case 'text':
                     $content = Lazy::twigRawParser((string)$this->host->text, $data);
-                    AllwayService::sendText($account, $contactIdentifier, $content, $inboxId, $contactName);
+                    AllwayService::sendText($account, $contactIdentifier, $content, $inboxId, $contactName, $contactCustomAttributes, $conversationCustomAttributes, $forceNewConversation, $specificConversationId);
                     break;
 
                 case 'image':
-                    $imageUrl = Lazy::twigRawParser((string)$this->host->image, $data);
+                    $imageUrl = Lazy::twigRawParser((string)$this->host->image_url, $data);
                     $caption = Lazy::twigRawParser((string)($this->host->caption ?? ''), $data);
-                    AllwayService::sendImage($account, $contactIdentifier, $imageUrl, $inboxId, $contactName, $caption);
+                    AllwayService::sendImage($account, $contactIdentifier, $imageUrl, $inboxId, $contactName, $caption, $contactCustomAttributes, $conversationCustomAttributes, $forceNewConversation, $specificConversationId);
                     break;
 
                 case 'document':
-                    $documentUrl = Lazy::twigRawParser((string)$this->host->document, $data);
+                    $documentUrl = Lazy::twigRawParser((string)$this->host->document_url, $data);
                     $caption = Lazy::twigRawParser((string)($this->host->caption ?? ''), $data);
                     $filename = Lazy::twigRawParser((string)($this->host->document_filename ?? ''), $data);
-                    AllwayService::sendDocument($account, $contactIdentifier, $documentUrl, $inboxId, $contactName, $caption, $filename);
+                    AllwayService::sendDocument($account, $contactIdentifier, $documentUrl, $inboxId, $contactName, $caption, $filename, $contactCustomAttributes, $conversationCustomAttributes, $forceNewConversation, $specificConversationId);
                     break;
             }
         } catch (\Exception $e) {

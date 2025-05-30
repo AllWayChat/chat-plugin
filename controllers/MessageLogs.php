@@ -48,10 +48,10 @@ class MessageLogs extends Controller
 
             try {
                 AllwayService::send(
-                    $messageLog->account,
+                        $messageLog->account,
                     $messageLog->to_contact,
                     $messageLog->content
-                );
+                    );
             } catch (\Exception $exception) {
                 throw new ValidationException(['account' => $exception->getMessage()]);
             }

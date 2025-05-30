@@ -4,72 +4,138 @@
 
 fields:
     account:
-        label: Conta Allway
+        label: Conta AllWay
         type: dropdown
-        placeholder: 'Selecione uma conta Allway'
-        comment: 'Selecione a conta Allway para enviar a mensagem'
-    inbox:
+        options: getAccountOptions
+        required: true
+        span: full
+    inbox_id:
         label: Canal
         type: dropdown
-        placeholder: 'Primeiro selecione uma conta'
-        comment: 'Selecione o canal/inbox para enviar a mensagem'
+        options: getInboxOptions
+        required: true
+        span: full
         dependsOn: account
-    contact_identifier:
-        label: Identificador do contato
-        type: text
-        comment: 'Identificador do contato (email, telefone, etc.). Suporta variáveis Twig.'
     contact_name:
-        label: Nome do contato
+        label: Nome do Contato
         type: text
-        comment: 'Nome do contato (opcional). Suporta variáveis Twig.'
-    message_type:
-        label: Tipo de mensagem
+        placeholder: Digite o nome do contato
+        required: true
+        span: full
+    contact:
+        label: Contato
+        type: text
+        placeholder: Digite o email ou telefone do contato
+        required: true
+        span: full
+    conversation_control:
+        label: Controle de Conversa
         type: dropdown
-        comment: 'Selecione o tipo de mensagem a ser enviada'
+        options:
+            default: Padrão (busca conversas com mesmos custom fields ou cria nova)
+            reuse: Reutilizar conversa existente (sem custom fields)
+            force_new: Sempre criar nova conversa
+            specific: Usar conversa específica (informar ID)
+        default: default
+        span: full
+        comment: "Para garantir reutilização, use 'Reutilizar conversa existente' sem custom fields."
+    conversation_id:
+        label: ID da Conversa
+        type: text
+        placeholder: "Digite o ID da conversa específica (suporta Twig: {{ variable }})"
+        trigger:
+            action: show
+            field: conversation_control
+            condition: value[specific]
+        span: full
+        comment: "Suporta Twig: {{ guest.id }}, {{ reservation.number }}, etc."
+    message_type:
+        label: Tipo de Mensagem
+        type: dropdown
+        options:
+            text: Texto
+            image: Imagem
+            document: Arquivo
         default: text
+        span: full
     text:
-        label: Texto da mensagem
+        label: Mensagem
         type: textarea
         size: large
-        comment: 'Conteúdo da mensagem de texto. Suporta variáveis Twig.'
+        placeholder: Digite a mensagem que deseja enviar
         trigger:
             action: show
             field: message_type
             condition: value[text]
-    image:
-        label: URL da imagem
+        span: full
+    image_url:
+        label: URL da Imagem
         type: text
-        comment: 'URL pública da imagem a ser enviada. Suporta variáveis Twig.'
+        placeholder: https://exemplo.com/imagem.jpg
+        default: https://picsum.photos/536/354
         trigger:
             action: show
             field: message_type
             condition: value[image]
-    document:
-        label: URL do arquivo
+        span: full
+    document_url:
+        label: URL do Arquivo
         type: text
-        comment: 'URL pública do arquivo a ser enviado. Suporta variáveis Twig.'
+        placeholder: https://exemplo.com/arquivo.pdf
+        default: https://www.w3.org/WAI/ER/tests/xhtml/testfiles/resources/pdf/dummy.pdf
         trigger:
             action: show
             field: message_type
             condition: value[document]
+        span: full
     document_filename:
-        label: Nome do arquivo
+        label: Nome do Arquivo (opcional)
         type: text
-        comment: 'Nome do arquivo (opcional). Suporta variáveis Twig.'
+        placeholder: documento.pdf
         trigger:
             action: show
             field: message_type
             condition: value[document]
+        span: full
     caption:
-        label: Legenda
+        label: Legenda (opcional)
         type: textarea
         size: small
-        comment: 'Legenda para imagem ou arquivo (opcional). Suporta variáveis Twig.'
+        placeholder: Digite uma legenda para a imagem ou arquivo
         trigger:
             action: show
             field: message_type
             condition: value[image] || value[document]
-
+        span: full
+    custom_attributes:
+        label: Campos Personalizados
+        type: repeater
+        form:
+            fields:
+                type:
+                    label: Tipo
+                    type: dropdown
+                    options:
+                        contact: Contato
+                        conversation: Conversa
+                    default: contact
+                    required: true
+                    span: left
+                key:
+                    label: Campo
+                    type: text
+                    placeholder: nome_do_campo
+                    required: true
+                    span: left
+                value:
+                    label: Valor
+                    type: text
+                    placeholder: "Valor do campo (suporta Twig: {{ variable }})"
+                    span: right
+                    comment: "Suporta Twig: {{ guest.name }}, {{ reservation.id }}, etc."
+        prompt: Adicionar Campos Personalizados
+        span: full
+        comment: "Campos personalizados que serão enviados para o Allway chat. Os valores suportam Twig: {{ variable }}"
     extra_php_code:
         label: Código PHP Extra
         type: codeeditor

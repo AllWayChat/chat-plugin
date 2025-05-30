@@ -2,5 +2,15 @@
 <div data-control="toolbar">
     <a href="<?= Backend::url('allway/chat/accounts/create') ?>"
        class="btn btn-primary oc-icon-plus mr-2"> Criar nova conta</a>
+    
+    <button 
+        type="button" 
+        class="btn btn-secondary oc-icon-send" 
+        data-control="popup"
+        data-handler="onLoadSendTest"
+        data-size="huge"
+        data-popup>
+        Enviar Teste
+    </button>
 </div>
 <?php \Block::endPut() ?>

@@ -45,4 +45,22 @@ class Account extends Model
     {
         return $this->api_url;
     }
+
+    public function getInboxIdOptions()
+    {
+        $accountId = post('TestMessage.account_id') ?: post('account_id') ?: $this->id;
+        $account = self::find($accountId);
+        
+        $options = [];
+        if ($account) {
+            $inboxes = \Allway\Chat\Classes\AllwayService::getAccountInboxes($account);
+            if ($inboxes) {
+                foreach ($inboxes as $inbox) {
+                    $options[$inbox['id']] = $inbox['name'] . ' (' . $inbox['channel_type'] . ')';
+                }
+            }
+        }
+        
+        return $options;
+    }
 }
