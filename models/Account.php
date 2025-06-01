@@ -104,4 +104,69 @@ class Account extends Model
         
         return $options;
     }
+
+    /**
+     * Busca os custom attributes de contato disponíveis na conta Chatwoot
+     */
+    public function getContactCustomAttributesOptions()
+    {
+        $accountId = post('TestMessage.account_id') ?: post('account_id') ?: $this->id;
+        return $this->formGetCustomAttributesOptions($accountId, 1); // 1 = contact attributes
+    }
+
+    /**
+     * Busca os custom attributes de conversa disponíveis na conta Chatwoot
+     */
+    public function getConversationCustomAttributesOptions()
+    {
+        $accountId = post('TestMessage.account_id') ?: post('account_id') ?: $this->id;
+        return $this->formGetCustomAttributesOptions($accountId, 0); // 0 = conversation attributes
+    }
+
+    public function formGetCustomAttributesOptions($accountId, $attributeModel = 0)
+    {
+        $account = self::find($accountId);
+        
+        $options = [];
+        if ($account) {
+            try {
+                $attributes = AllwayService::getAccountCustomAttributes($account, $attributeModel);
+                if ($attributes) {
+                    foreach ($attributes as $attribute) {
+                        if (is_array($attribute) && isset($attribute['attribute_key']) && isset($attribute['attribute_display_name'])) {
+                            $key = $attribute['attribute_key'];
+                            $displayName = $attribute['attribute_display_name'];
+                            $type = isset($attribute['attribute_display_type']) ? " ({$attribute['attribute_display_type']})" : '';
+                            $description = isset($attribute['attribute_description']) ? " - {$attribute['attribute_description']}" : '';
+                            
+                            $displayText = $displayName . $type . $description;
+                            $options[$key] = $displayText;
+                        }
+                    }
+                }
+            } catch (\Exception $e) {
+                \Log::error('Erro ao buscar custom attributes do Chatwoot: ' . $e->getMessage());
+            }
+        }
+        
+        return $options;
+    }
+
+    /**
+     * Opções para dropdown de custom attributes de contato (para uso em formulários)
+     */
+    public function getContactCustomAttributesKeyOptions()
+    {
+        $accountId = post('TestMessage.account_id') ?: post('account_id') ?: $this->id;
+        return $this->formGetCustomAttributesOptions($accountId, 1); // 1 = contact attributes
+    }
+
+    /**
+     * Opções para dropdown de custom attributes de conversa (para uso em formulários)
+     */
+    public function getConversationCustomAttributesKeyOptions()
+    {
+        $accountId = post('TestMessage.account_id') ?: post('account_id') ?: $this->id;
+        return $this->formGetCustomAttributesOptions($accountId, 0); // 0 = conversation attributes
+    }
 }

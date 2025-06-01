@@ -104,10 +104,19 @@ class SendAllwayMessage extends ActionBase
         
         if (is_array($customAttributes)) {
             foreach ($customAttributes as $attr) {
-                if (!empty($attr['key']) && isset($attr['value'])) {
-                    $key = Lazy::twigRawParser((string)$attr['key'], $data);
+                $type = $attr['type'] ?? 'contact';
+                $key = null;
+                $value = null;
+                
+                if ($type === 'contact' && !empty($attr['key'])) {
+                    $key = $attr['key'];
+                } else if ($type === 'conversation' && !empty($attr['key_conversation'])) {
+                    $key = $attr['key_conversation'];
+                }
+                
+                if ($key && isset($attr['value'])) {
+                    $key = Lazy::twigRawParser((string)$key, $data);
                     $value = Lazy::twigRawParser((string)$attr['value'], $data);
-                    $type = $attr['type'] ?? 'contact';
                     
                     if ($type === 'contact') {
                         $contactCustomAttributes[$key] = $value;
@@ -235,5 +244,37 @@ class SendAllwayMessage extends ActionBase
         }
         
         return $account->formGetLabelsOptions($accountId);
+    }
+    
+    public function getContactCustomAttributesKeyOptions(): array
+    {
+        $accountId = post('account') ?? $this->host->account ?? null;
+        
+        if (!$accountId) {
+            return [];
+        }
+        
+        $account = Account::find($accountId);
+        if (!$account) {
+            return [];
+        }
+        
+        return $account->formGetCustomAttributesOptions($accountId, 1); // 1 = contact attributes
+    }
+    
+    public function getConversationCustomAttributesKeyOptions(): array
+    {
+        $accountId = post('account') ?? $this->host->account ?? null;
+        
+        if (!$accountId) {
+            return [];
+        }
+        
+        $account = Account::find($accountId);
+        if (!$account) {
+            return [];
+        }
+        
+        return $account->formGetCustomAttributesOptions($accountId, 0); // 0 = conversation attributes
     }
 } 

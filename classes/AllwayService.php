@@ -1167,4 +1167,31 @@ class AllwayService
             throw new \Exception('Failed to get conversation labels: ' . $e->getMessage());
         }
     }
+
+    /**
+     * Busca custom attributes da conta do Chatwoot
+     */
+    public static function getAccountCustomAttributes(Account $account, int $attributeModel = 0): array
+    {
+        $client = new Client();
+        
+        try {
+            $response = $client->get($account->api_url . '/accounts/' . $account->account_id . '/custom_attribute_definitions', [
+                'headers' => [
+                    'api_access_token' => $account->token,
+                ],
+                'query' => [
+                    'attribute_model' => $attributeModel // 0 = conversation, 1 = contact
+                ]
+            ]);
+            
+            $responseData = json_decode($response->getBody(), true);
+            
+            return $responseData ?? [];
+            
+        } catch (GuzzleException $e) {
+            \Log::error('Erro ao buscar custom attributes do Chatwoot: ' . $e->getMessage());
+            return [];
+        }
+    }
 } 

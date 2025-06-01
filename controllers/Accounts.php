@@ -107,18 +107,28 @@ class Accounts extends BaseController
         $conversationCustomAttributes = [];
         if (is_array($customAttributes)) {
             foreach ($customAttributes as $attr) {
-                if (!empty($attr['key']) && isset($attr['value'])) {
-                    $type = $attr['type'] ?? 'contact';
+                $type = $attr['type'] ?? 'contact';
+                $key = null;
+                $value = null;
+                
+                if ($type === 'contact' && !empty($attr['key'])) {
+                    $key = $attr['key'];
+                } else if ($type === 'conversation' && !empty($attr['key_conversation'])) {
+                    $key = $attr['key_conversation'];
+                }
+                
+                if ($key && isset($attr['value'])) {
+                    $value = $attr['value'];
+                    
                     if ($type === 'contact') {
-                        $contactCustomAttributes[$attr['key']] = $attr['value'];
+                        $contactCustomAttributes[$key] = $value;
                     } else if ($type === 'conversation') {
-                        $conversationCustomAttributes[$attr['key']] = $attr['value'];
+                        $conversationCustomAttributes[$key] = $value;
                     }
                 }
             }
         }
 
-        // Determinar parâmetros de controle de conversa
         $forceNewConversation = false;
         $specificConversationId = null;
         
@@ -132,7 +142,6 @@ class Accounts extends BaseController
             case 'reuse':
             case 'default':
             default:
-                // Usa comportamento padrão
                 break;
         }
 
@@ -414,10 +423,29 @@ class Accounts extends BaseController
                         ],
                         'key' => [
                             'label' => 'Campo',
-                            'type' => 'text',
-                            'placeholder' => 'nome_do_campo',
+                            'type' => 'dropdown',
+                            'options' => 'getContactCustomAttributesKeyOptions',
+                            'trigger' => [
+                                'action' => 'show',
+                                'field' => 'type',
+                                'condition' => 'value[contact]'
+                            ],
                             'required' => true,
-                            'span' => 'left'
+                            'span' => 'left',
+                            'dependsOn' => ['account_id', 'type']
+                        ],
+                        'key_conversation' => [
+                            'label' => 'Campo',
+                            'type' => 'dropdown',
+                            'options' => 'getConversationCustomAttributesKeyOptions',
+                            'trigger' => [
+                                'action' => 'show',
+                                'field' => 'type',
+                                'condition' => 'value[conversation]'
+                            ],
+                            'required' => true,
+                            'span' => 'left',
+                            'dependsOn' => ['account_id', 'type']
                         ],
                         'value' => [
                             'label' => 'Valor',
@@ -478,4 +506,6 @@ class Accounts extends BaseController
         
         return $options;
     }
+
+
 }

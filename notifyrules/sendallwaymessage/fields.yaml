@@ -121,10 +121,26 @@ fields:
                     span: left
                 key:
                     label: Campo
-                    type: text
-                    placeholder: nome_do_campo
+                    type: dropdown
+                    options: getContactCustomAttributesKeyOptions
+                    trigger:
+                        action: show
+                        field: type
+                        condition: value[contact]
                     required: true
                     span: left
+                    dependsOn: [account, type]
+                key_conversation:
+                    label: Campo
+                    type: dropdown
+                    options: getConversationCustomAttributesKeyOptions
+                    trigger:
+                        action: show
+                        field: type
+                        condition: value[conversation]
+                    required: true
+                    span: left
+                    dependsOn: [account, type]
                 value:
                     label: Valor
                     type: textarea
