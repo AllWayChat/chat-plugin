@@ -118,6 +118,16 @@ class SendAllwayMessage extends ActionBase
             }
         }
 
+        $etiquetas = [];
+        $etiquetasData = $this->host->etiquetas ?? [];
+        if (is_array($etiquetasData)) {
+            foreach ($etiquetasData as $etiquetaItem) {
+                if (!empty($etiquetaItem['etiqueta'])) {
+                    $etiquetas[] = $etiquetaItem['etiqueta'];
+                }
+            }
+        }
+
         $forceNewConversation = false;
         $specificConversationId = null;
         
@@ -135,24 +145,31 @@ class SendAllwayMessage extends ActionBase
         }
 
         try {
+            $result = null;
+            
             switch ($messageType) {
                 case 'text':
                     $content = Lazy::twigRawParser((string)$this->host->text, $data);
-                    AllwayService::sendText($account, $contactIdentifier, $content, $inboxId, $contactName, $contactCustomAttributes, $conversationCustomAttributes, $forceNewConversation, $specificConversationId);
+                    $result = AllwayService::sendText($account, $contactIdentifier, $content, $inboxId, $contactName, $contactCustomAttributes, $conversationCustomAttributes, $forceNewConversation, $specificConversationId);
                     break;
 
                 case 'image':
                     $imageUrl = Lazy::twigRawParser((string)$this->host->image_url, $data);
                     $caption = Lazy::twigRawParser((string)($this->host->caption ?? ''), $data);
-                    AllwayService::sendImage($account, $contactIdentifier, $imageUrl, $inboxId, $contactName, $caption, $contactCustomAttributes, $conversationCustomAttributes, $forceNewConversation, $specificConversationId);
+                    $result = AllwayService::sendImage($account, $contactIdentifier, $imageUrl, $inboxId, $contactName, $caption, $contactCustomAttributes, $conversationCustomAttributes, $forceNewConversation, $specificConversationId);
                     break;
 
                 case 'document':
                     $documentUrl = Lazy::twigRawParser((string)$this->host->document_url, $data);
                     $caption = Lazy::twigRawParser((string)($this->host->caption ?? ''), $data);
                     $filename = Lazy::twigRawParser((string)($this->host->document_filename ?? ''), $data);
-                    AllwayService::sendDocument($account, $contactIdentifier, $documentUrl, $inboxId, $contactName, $caption, $filename, $contactCustomAttributes, $conversationCustomAttributes, $forceNewConversation, $specificConversationId);
+                    $result = AllwayService::sendDocument($account, $contactIdentifier, $documentUrl, $inboxId, $contactName, $caption, $filename, $contactCustomAttributes, $conversationCustomAttributes, $forceNewConversation, $specificConversationId);
                     break;
+            }
+            
+            // Aplicar etiquetas se foram especificadas e se temos o resultado da mensagem
+            if (!empty($etiquetas) && $result && isset($result['conversation_id'])) {
+                AllwayService::addLabelsToConversation($account, $result['conversation_id'], $etiquetas);
             }
         } catch (\Exception $e) {
             throw new \Exception($e->getMessage());
@@ -202,5 +219,21 @@ class SendAllwayMessage extends ActionBase
         }
         
         return $options;
+    }
+    
+    public function getEtiquetasOptions(): array
+    {
+        $accountId = post('account') ?? $this->host->account ?? null;
+        
+        if (!$accountId) {
+            return [];
+        }
+        
+        $account = Account::find($accountId);
+        if (!$account) {
+            return [];
+        }
+        
+        return $account->formGetLabelsOptions($accountId);
     }
 } 

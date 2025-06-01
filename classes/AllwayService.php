@@ -1092,4 +1092,79 @@ class AllwayService
     {
         return self::sendText($account, $contactIdentifier, $content, $inboxId, $contactName, $contactCustomAttributes, $conversationCustomAttributes, false, $conversationId);
     }
+
+    /**
+     * Busca todas as labels disponíveis na conta Chatwoot
+     */
+    public static function getAccountLabels(Account $account): array
+    {
+        $client = new Client();
+        
+        try {
+            $response = $client->get($account->api_url . '/accounts/' . $account->account_id . '/labels', [
+                'headers' => [
+                    'api_access_token' => $account->token,
+                ]
+            ]);
+            
+            $responseData = json_decode($response->getBody(), true);
+            
+            return $responseData['payload'] ?? [];
+            
+        } catch (GuzzleException $e) {
+            throw new \Exception('Failed to get labels from Chatwoot: ' . $e->getMessage());
+        }
+    }
+
+    /**
+     * Adiciona labels a uma conversa
+     */
+    public static function addLabelsToConversation(Account $account, int $conversationId, array $labels): bool
+    {
+        if (empty($labels)) {
+            return true;
+        }
+
+        $client = new Client();
+        
+        try {
+            $response = $client->post($account->api_url . '/accounts/' . $account->account_id . '/conversations/' . $conversationId . '/labels', [
+                'headers' => [
+                    'Content-Type' => 'application/json',
+                    'api_access_token' => $account->token,
+                ],
+                'json' => [
+                    'labels' => $labels
+                ]
+            ]);
+            
+            return $response->getStatusCode() === 200;
+            
+        } catch (GuzzleException $e) {
+            throw new \Exception('Failed to add labels to conversation: ' . $e->getMessage());
+        }
+    }
+
+    /**
+     * Busca labels de uma conversa específica
+     */
+    public static function getConversationLabels(Account $account, int $conversationId): array
+    {
+        $client = new Client();
+        
+        try {
+            $response = $client->get($account->api_url . '/accounts/' . $account->account_id . '/conversations/' . $conversationId . '/labels', [
+                'headers' => [
+                    'api_access_token' => $account->token,
+                ]
+            ]);
+            
+            $responseData = json_decode($response->getBody(), true);
+            
+            return $responseData['payload'] ?? [];
+            
+        } catch (GuzzleException $e) {
+            throw new \Exception('Failed to get conversation labels: ' . $e->getMessage());
+        }
+    }
 } 

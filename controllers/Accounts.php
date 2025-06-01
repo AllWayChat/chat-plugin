@@ -71,6 +71,16 @@ class Accounts extends BaseController
         // Novos parâmetros de controle de conversa
         $conversationControl = $data['conversation_control'] ?? 'default';
         $conversationId = !empty($data['conversation_id']) ? (int) $data['conversation_id'] : null;
+        
+        // Novo parâmetro para labels
+        $labels = [];
+        if (!empty($data['labels']) && is_array($data['labels'])) {
+            foreach ($data['labels'] as $label) {
+                if (!empty($label['label'])) {
+                    $labels[] = $label['label'];
+                }
+            }
+        }
 
         if (!$contact) {
             Flash::error('Contato não informado');
@@ -153,8 +163,18 @@ class Accounts extends BaseController
                 $result = AllwayService::sendDocument($account, $contact, $documentUrl, $inbox_id, $contactName, $caption, $filename, $contactCustomAttributes, $conversationCustomAttributes, $forceNewConversation, $specificConversationId);
             }
             
-            $conversationId = $result['conversation_id'] ?? null;
-            Flash::success("Mensagem enviada com sucesso! Conversa ID: {$conversationId}");
+            $conversationIdResult = $result['conversation_id'] ?? null;
+            
+            if (!empty($labels) && $conversationIdResult) {
+                try {
+                    AllwayService::addLabelsToConversation($account, $conversationIdResult, $labels);
+                    Flash::success("Mensagem enviada com sucesso! Conversa ID: {$conversationIdResult}. Labels aplicadas: " . implode(', ', $labels));
+                } catch (\Exception $labelException) {
+                    Flash::warning("Mensagem enviada com sucesso! Conversa ID: {$conversationIdResult}. Erro ao aplicar labels: " . $labelException->getMessage());
+                }
+            } else {
+                Flash::success("Mensagem enviada com sucesso! Conversa ID: {$conversationIdResult}");
+            }
         } catch (\Exception $exception) {
             Flash::error('Erro ao enviar mensagem: ' . $exception->getMessage());
         }
@@ -411,6 +431,27 @@ class Accounts extends BaseController
                 'span' => 'full',
                 'comment' => 'Campos personalizados que serão enviados para o Allway chat. Escolha se é para o Contato ou para a Conversa.',
                 'tab' => 'Campos Personalizados'
+            ],
+            'labels' => [
+                'label' => 'Etiquetas',
+                'type' => 'repeater',
+                'form' => [
+                    'fields' => [
+                        'label' => [
+                            'label' => 'Etiqueta',
+                            'type' => 'dropdown',
+                            'placeholder' => 'Primeiro selecione uma conta',
+                            'options' => 'getLabelsOptions',
+                            'required' => true,
+                            'span' => 'full',
+                            'dependsOn' => 'account_id'
+                        ]
+                    ]
+                ],
+                'prompt' => 'Adicionar Etiqueta',
+                'span' => 'full',
+                'comment' => 'Etiquetas que serão aplicadas à conversa no Chatwoot.',
+                'tab' => 'Etiquetas'
             ]
         ];
     }

@@ -72,7 +72,6 @@ fields:
         label: URL da Imagem
         type: text
         placeholder: https://exemplo.com/imagem.jpg
-        default: https://picsum.photos/536/354
         trigger:
             action: show
             field: message_type
@@ -82,7 +81,6 @@ fields:
         label: URL do Arquivo
         type: text
         placeholder: https://exemplo.com/arquivo.pdf
-        default: https://www.w3.org/WAI/ER/tests/xhtml/testfiles/resources/pdf/dummy.pdf
         trigger:
             action: show
             field: message_type
@@ -129,13 +127,29 @@ fields:
                     span: left
                 value:
                     label: Valor
-                    type: text
-                    placeholder: "Valor do campo (suporta Twig: {{ variable }})"
-                    span: right
-                    comment: "Suporta Twig: {{ guest.name }}, {{ reservation.id }}, etc."
+                    type: textarea
+                    size: tiny
+                    placeholder: "Valor do campo"
+                    span: full
+                    comment: "Suporta Twig."
         prompt: Adicionar Campos Personalizados
         span: full
         comment: "Campos personalizados que serão enviados para o Allway chat. Os valores suportam Twig: {{ variable }}"
+    etiquetas:
+        label: Etiquetas
+        type: repeater
+        form:
+            fields:
+                etiqueta:
+                    label: Etiqueta
+                    type: dropdown
+                    options: getEtiquetasOptions
+                    required: true
+                    span: full
+                    dependsOn: account
+        prompt: Adicionar Etiqueta
+        span: full
+        comment: "Etiquetas que serão aplicadas à conversa no Chatwoot."
     extra_php_code:
         label: Código PHP Extra
         type: codeeditor
