@@ -35,8 +35,7 @@ class Accounts extends BaseController
         parent::__construct();
 
         SettingsManager::setContext('Allway.Chat', 'accounts');
-        
-        // Inicializar o test form widget
+
         $this->createTestFormWidget();
     }
 
@@ -46,7 +45,6 @@ class Accounts extends BaseController
             throw new ValidationException(['account' => 'Você não tem permissão para enviar mensagens de teste']);
         }
 
-        // Criar FormWidget para o popup de teste
         $this->vars['formWidget'] = $this->makeTestFormWidget();
         
         return $this->makePartial('popup_send_test');
@@ -68,11 +66,9 @@ class Accounts extends BaseController
         $messageType = $data['message_type'] ?? 'text';
         $customAttributes = $data['custom_attributes'] ?? [];
         
-        // Novos parâmetros de controle de conversa
         $conversationControl = $data['conversation_control'] ?? 'default';
         $conversationId = !empty($data['conversation_id']) ? (int) $data['conversation_id'] : null;
         
-        // Novo parâmetro para labels
         $labels = [];
         if (!empty($data['labels']) && is_array($data['labels'])) {
             foreach ($data['labels'] as $label) {
@@ -81,6 +77,8 @@ class Accounts extends BaseController
                 }
             }
         }
+        
+        $conversationStatus = $data['conversation_status'] ?? null;
 
         if (!$contact) {
             Flash::error('Contato não informado');
@@ -152,7 +150,7 @@ class Accounts extends BaseController
                     Flash::error('Mensagem não informada');
                     return;
                 }
-                $result = AllwayService::sendText($account, $contact, $message, $inbox_id, $contactName, $contactCustomAttributes, $conversationCustomAttributes, $forceNewConversation, $specificConversationId);
+                $result = AllwayService::sendText($account, $contact, $message, $inbox_id, $contactName, $contactCustomAttributes, $conversationCustomAttributes, $forceNewConversation, $specificConversationId, $conversationStatus);
             } else if ($messageType === 'image') {
                 $imageUrl = $data['image_url'] ?? null;
                 if (!$imageUrl) {
@@ -160,7 +158,7 @@ class Accounts extends BaseController
                     return;
                 }
                 $caption = $data['caption'] ?? '';
-                $result = AllwayService::sendImage($account, $contact, $imageUrl, $inbox_id, $contactName, $caption, $contactCustomAttributes, $conversationCustomAttributes, $forceNewConversation, $specificConversationId);
+                $result = AllwayService::sendImage($account, $contact, $imageUrl, $inbox_id, $contactName, $caption, $contactCustomAttributes, $conversationCustomAttributes, $forceNewConversation, $specificConversationId, $conversationStatus);
             } else if ($messageType === 'document') {
                 $documentUrl = $data['document_url'] ?? null;
                 if (!$documentUrl) {
@@ -169,20 +167,52 @@ class Accounts extends BaseController
                 }
                 $caption = $data['caption'] ?? '';
                 $filename = $data['document_filename'] ?? '';
-                $result = AllwayService::sendDocument($account, $contact, $documentUrl, $inbox_id, $contactName, $caption, $filename, $contactCustomAttributes, $conversationCustomAttributes, $forceNewConversation, $specificConversationId);
+                $result = AllwayService::sendDocument($account, $contact, $documentUrl, $inbox_id, $contactName, $caption, $filename, $contactCustomAttributes, $conversationCustomAttributes, $forceNewConversation, $specificConversationId, $conversationStatus);
             }
             
             $conversationIdResult = $result['conversation_id'] ?? null;
             
+            $messages = [];
+            $hasError = false;
+            
+            // Aplicar labels se especificadas
             if (!empty($labels) && $conversationIdResult) {
                 try {
                     AllwayService::addLabelsToConversation($account, $conversationIdResult, $labels);
-                    Flash::success("Mensagem enviada com sucesso! Conversa ID: {$conversationIdResult}. Labels aplicadas: " . implode(', ', $labels));
+                    $messages[] = "Labels aplicadas: " . implode(', ', $labels);
                 } catch (\Exception $labelException) {
-                    Flash::warning("Mensagem enviada com sucesso! Conversa ID: {$conversationIdResult}. Erro ao aplicar labels: " . $labelException->getMessage());
+                    $messages[] = "Erro ao aplicar labels: " . $labelException->getMessage();
+                    $hasError = true;
+                }
+            }
+            
+            // Alterar status da conversa se especificado
+            if (!empty($conversationStatus) && $conversationIdResult) {
+                try {
+                    $statusUpdated = AllwayService::updateConversationStatus($account, $conversationIdResult, $conversationStatus);
+                    if ($statusUpdated) {
+                        $messages[] = "Status alterado para: " . $conversationStatus;
+                    } else {
+                        $messages[] = "Erro ao alterar status da conversa";
+                        $hasError = true;
+                    }
+                } catch (\Exception $statusException) {
+                    $messages[] = "Erro ao alterar status: " . $statusException->getMessage();
+                    $hasError = true;
+                }
+            }
+            
+            $baseMessage = "Mensagem enviada com sucesso! Conversa ID: {$conversationIdResult}";
+            
+            if (!empty($messages)) {
+                $fullMessage = $baseMessage . ". " . implode(". ", $messages);
+                if ($hasError) {
+                    Flash::warning($fullMessage);
+                } else {
+                    Flash::success($fullMessage);
                 }
             } else {
-                Flash::success("Mensagem enviada com sucesso! Conversa ID: {$conversationIdResult}");
+                Flash::success($baseMessage);
             }
         } catch (\Exception $exception) {
             Flash::error('Erro ao enviar mensagem: ' . $exception->getMessage());
@@ -215,7 +245,6 @@ class Accounts extends BaseController
     {
         $model->fill((array)post('Account'));
 
-        // Test the connection before saving
         try {
             if (!AllwayService::testConnection($model)) {
                 throw new \Exception('Falha na conexão com o servidor Allway');
@@ -480,6 +509,20 @@ class Accounts extends BaseController
                 'span' => 'full',
                 'comment' => 'Etiquetas que serão aplicadas à conversa no Chatwoot.',
                 'tab' => 'Etiquetas'
+            ],
+            'conversation_status' => [
+                'label' => 'Status da Conversa',
+                'type' => 'dropdown',
+                'options' => [
+                    '' => 'Não alterar status',
+                    'open' => 'Aberta',
+                    'pending' => 'Pendente',
+                    'resolved' => 'Resolvida'
+                ],
+                'default' => '',
+                'span' => 'full',
+                'comment' => 'Status que será aplicado à conversa após o envio da mensagem.',
+                'tab' => 'Configuração'
             ]
         ];
     }

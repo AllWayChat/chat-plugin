@@ -166,6 +166,17 @@ fields:
         prompt: Adicionar Etiqueta
         span: full
         comment: "Etiquetas que serão aplicadas à conversa no Chatwoot."
+    conversation_status:
+        label: Status da Conversa
+        type: dropdown
+        options:
+            '': Não alterar status
+            open: Aberta
+            pending: Pendente
+            resolved: Resolvida
+        default: ''
+        span: full
+        comment: "Status que será aplicado à conversa após o envio da mensagem."
     extra_php_code:
         label: Código PHP Extra
         type: codeeditor

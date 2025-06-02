@@ -137,6 +137,8 @@ class SendAllwayMessage extends ActionBase
             }
         }
 
+        $conversationStatus = Lazy::twigRawParser((string)($this->host->conversation_status ?? ''), $data);
+
         $forceNewConversation = false;
         $specificConversationId = null;
         
@@ -159,26 +161,31 @@ class SendAllwayMessage extends ActionBase
             switch ($messageType) {
                 case 'text':
                     $content = Lazy::twigRawParser((string)$this->host->text, $data);
-                    $result = AllwayService::sendText($account, $contactIdentifier, $content, $inboxId, $contactName, $contactCustomAttributes, $conversationCustomAttributes, $forceNewConversation, $specificConversationId);
+                    $result = AllwayService::sendText($account, $contactIdentifier, $content, $inboxId, $contactName, $contactCustomAttributes, $conversationCustomAttributes, $forceNewConversation, $specificConversationId, $conversationStatus);
                     break;
 
                 case 'image':
                     $imageUrl = Lazy::twigRawParser((string)$this->host->image_url, $data);
                     $caption = Lazy::twigRawParser((string)($this->host->caption ?? ''), $data);
-                    $result = AllwayService::sendImage($account, $contactIdentifier, $imageUrl, $inboxId, $contactName, $caption, $contactCustomAttributes, $conversationCustomAttributes, $forceNewConversation, $specificConversationId);
+                    $result = AllwayService::sendImage($account, $contactIdentifier, $imageUrl, $inboxId, $contactName, $caption, $contactCustomAttributes, $conversationCustomAttributes, $forceNewConversation, $specificConversationId, $conversationStatus);
                     break;
 
                 case 'document':
                     $documentUrl = Lazy::twigRawParser((string)$this->host->document_url, $data);
                     $caption = Lazy::twigRawParser((string)($this->host->caption ?? ''), $data);
                     $filename = Lazy::twigRawParser((string)($this->host->document_filename ?? ''), $data);
-                    $result = AllwayService::sendDocument($account, $contactIdentifier, $documentUrl, $inboxId, $contactName, $caption, $filename, $contactCustomAttributes, $conversationCustomAttributes, $forceNewConversation, $specificConversationId);
+                    $result = AllwayService::sendDocument($account, $contactIdentifier, $documentUrl, $inboxId, $contactName, $caption, $filename, $contactCustomAttributes, $conversationCustomAttributes, $forceNewConversation, $specificConversationId, $conversationStatus);
                     break;
             }
             
             // Aplicar etiquetas se foram especificadas e se temos o resultado da mensagem
             if (!empty($etiquetas) && $result && isset($result['conversation_id'])) {
                 AllwayService::addLabelsToConversation($account, $result['conversation_id'], $etiquetas);
+            }
+            
+            // Alterar status da conversa se especificado
+            if (!empty($conversationStatus) && $result && isset($result['conversation_id'])) {
+                AllwayService::updateConversationStatus($account, $result['conversation_id'], $conversationStatus);
             }
         } catch (\Exception $e) {
             throw new \Exception($e->getMessage());

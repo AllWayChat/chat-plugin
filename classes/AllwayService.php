@@ -9,7 +9,7 @@ use GuzzleHttp\Exception\GuzzleException;
 class AllwayService
 {
 
-    public static function sendText(Account $account, string $contactIdentifier, string $content, int $inboxId, string $contactName = '', array $contactCustomAttributes = [], array $conversationCustomAttributes = [], bool $forceNewConversation = false, int $conversationId = null)
+    public static function sendText(Account $account, string $contactIdentifier, string $content, int $inboxId, string $contactName = '', array $contactCustomAttributes = [], array $conversationCustomAttributes = [], bool $forceNewConversation = false, int $conversationId = null, string $conversationStatus = null)
     {
         if (!Contact::validateIdentifier($contactIdentifier)) {
             throw new \Exception('Identificador do contato inválido: ' . $contactIdentifier);
@@ -19,10 +19,10 @@ class AllwayService
             'content' => $content,
             'message_type' => 'outgoing',
             'private' => false,
-        ], $content, $contactCustomAttributes, $conversationCustomAttributes, $forceNewConversation, $conversationId);
+        ], $content, $contactCustomAttributes, $conversationCustomAttributes, $forceNewConversation, $conversationId, $conversationStatus);
     }
 
-    public static function sendImage(Account $account, string $contactIdentifier, string $imageUrl, int $inboxId, string $contactName = '', string $caption = '', array $contactCustomAttributes = [], array $conversationCustomAttributes = [], bool $forceNewConversation = false, int $conversationId = null)
+    public static function sendImage(Account $account, string $contactIdentifier, string $imageUrl, int $inboxId, string $contactName = '', string $caption = '', array $contactCustomAttributes = [], array $conversationCustomAttributes = [], bool $forceNewConversation = false, int $conversationId = null, string $conversationStatus = null)
     {
         if (!Contact::validateIdentifier($contactIdentifier)) {
             throw new \Exception('Identificador do contato inválido: ' . $contactIdentifier);
@@ -32,10 +32,10 @@ class AllwayService
             throw new \Exception('URL da imagem é obrigatória');
         }
 
-        return self::sendAttachment($account, $contactIdentifier, $inboxId, $contactName, $imageUrl, $caption ?: 'Imagem', basename($imageUrl), $contactCustomAttributes, $conversationCustomAttributes, $forceNewConversation, $conversationId);
+        return self::sendAttachment($account, $contactIdentifier, $inboxId, $contactName, $imageUrl, $caption ?: 'Imagem', basename($imageUrl), $contactCustomAttributes, $conversationCustomAttributes, $forceNewConversation, $conversationId, $conversationStatus);
     }
 
-    public static function sendDocument(Account $account, string $contactIdentifier, string $documentUrl, int $inboxId, string $contactName = '', string $caption = '', string $filename = '', array $contactCustomAttributes = [], array $conversationCustomAttributes = [], bool $forceNewConversation = false, int $conversationId = null)
+    public static function sendDocument(Account $account, string $contactIdentifier, string $documentUrl, int $inboxId, string $contactName = '', string $caption = '', string $filename = '', array $contactCustomAttributes = [], array $conversationCustomAttributes = [], bool $forceNewConversation = false, int $conversationId = null, string $conversationStatus = null)
     {
         if (!Contact::validateIdentifier($contactIdentifier)) {
             throw new \Exception('Identificador do contato inválido: ' . $contactIdentifier);
@@ -45,10 +45,10 @@ class AllwayService
             throw new \Exception('URL do documento é obrigatória');
         }
 
-        return self::sendAttachment($account, $contactIdentifier, $inboxId, $contactName, $documentUrl, $caption ?: 'Arquivo', $filename ?: basename($documentUrl), $contactCustomAttributes, $conversationCustomAttributes, $forceNewConversation, $conversationId);
+        return self::sendAttachment($account, $contactIdentifier, $inboxId, $contactName, $documentUrl, $caption ?: 'Arquivo', $filename ?: basename($documentUrl), $contactCustomAttributes, $conversationCustomAttributes, $forceNewConversation, $conversationId, $conversationStatus);
     }
 
-    protected static function sendAttachment(Account $account, string $contactIdentifier, int $inboxId, string $contactName, string $fileUrl, string $content, string $filename, array $contactCustomAttributes = [], array $conversationCustomAttributes = [], bool $forceNewConversation = false, int $conversationId = null)
+    protected static function sendAttachment(Account $account, string $contactIdentifier, int $inboxId, string $contactName, string $fileUrl, string $content, string $filename, array $contactCustomAttributes = [], array $conversationCustomAttributes = [], bool $forceNewConversation = false, int $conversationId = null, string $conversationStatus = null)
     {
         $client = new Client();
         
@@ -64,7 +64,7 @@ class AllwayService
                 throw new \Exception('Failed to create or get contact');
             }
             
-            $conversation = self::getOrCreateConversationForContact($account, $contact, $inbox, $conversationCustomAttributes, $forceNewConversation, $conversationId);
+            $conversation = self::getOrCreateConversationForContact($account, $contact, $inbox, $conversationCustomAttributes, $forceNewConversation, $conversationId, $conversationStatus);
             
             if (!$conversation) {
                 throw new \Exception('Failed to create or get conversation');
@@ -148,7 +148,7 @@ class AllwayService
         }
     }
 
-    protected static function sendMessage(Account $account, string $contactIdentifier, int $inboxId, string $contactName, array $messageData, string $logContent, array $contactCustomAttributes = [], array $conversationCustomAttributes = [], bool $forceNewConversation = false, int $conversationId = null)
+    protected static function sendMessage(Account $account, string $contactIdentifier, int $inboxId, string $contactName, array $messageData, string $logContent, array $contactCustomAttributes = [], array $conversationCustomAttributes = [], bool $forceNewConversation = false, int $conversationId = null, string $conversationStatus = null)
     {
         $client = new Client();
         
@@ -164,7 +164,7 @@ class AllwayService
                 throw new \Exception('Failed to create or get contact');
             }
             
-            $conversation = self::getOrCreateConversationForContact($account, $contact, $inbox, $conversationCustomAttributes, $forceNewConversation, $conversationId);
+            $conversation = self::getOrCreateConversationForContact($account, $contact, $inbox, $conversationCustomAttributes, $forceNewConversation, $conversationId, $conversationStatus);
             
             if (!$conversation) {
                 throw new \Exception('Failed to create or get conversation');
@@ -568,7 +568,7 @@ class AllwayService
         }
     }
 
-    protected static function getOrCreateConversationForContact(Account $account, array $contact, array $inbox, array $conversationCustomAttributes = [], bool $forceNewConversation = false, int $conversationId = null): ?array
+    protected static function getOrCreateConversationForContact(Account $account, array $contact, array $inbox, array $conversationCustomAttributes = [], bool $forceNewConversation = false, int $conversationId = null, string $conversationStatus = null): ?array
     {
         if ($conversationId !== null) {
             $conversation = self::getConversationById($account, $conversationId);
@@ -587,7 +587,7 @@ class AllwayService
             return self::createConversation($account, [
                 'contact_id' => $contact['id'],
                 'inbox_id' => $inbox['id'],
-            ], $conversationCustomAttributes);
+            ], $conversationCustomAttributes, $conversationStatus);
         }
         
         $conversations = self::getConversationsByInboxAndContact($account, $inbox, $contact);
@@ -615,7 +615,7 @@ class AllwayService
             return self::createConversation($account, [
                 'contact_id' => $contact['id'],
                 'inbox_id' => $inbox['id'],
-            ], $conversationCustomAttributes);
+            ], $conversationCustomAttributes, $conversationStatus);
         }
         
         if (!empty($conversations)) {
@@ -625,7 +625,7 @@ class AllwayService
         return self::createConversation($account, [
             'contact_id' => $contact['id'],
             'inbox_id' => $inbox['id'],
-        ], []);
+        ], [], $conversationStatus);
     }
 
     /**
@@ -702,13 +702,18 @@ class AllwayService
         }
     }
 
-    public static function createConversation(Account $account, array $conversationData, array $conversationCustomAttributes = []): ?array
+    public static function createConversation(Account $account, array $conversationData, array $conversationCustomAttributes = [], string $conversationStatus = null): ?array
     {
         $client = new Client();
         
         try {
             if (!empty($conversationCustomAttributes)) {
                 $conversationData['custom_attributes'] = $conversationCustomAttributes;
+            }
+            
+            // Adicionar status na criação da conversa se especificado
+            if (!empty($conversationStatus) && in_array($conversationStatus, ['open', 'resolved', 'pending'])) {
+                $conversationData['status'] = $conversationStatus;
             }
             
             $response = $client->post($account->api_url . '/accounts/' . $account->account_id . '/conversations', [
@@ -1231,6 +1236,40 @@ class AllwayService
         } catch (GuzzleException $e) {
             \Log::error('Erro ao buscar custom attributes do Chatwoot: ' . $e->getMessage());
             return [];
+        }
+    }
+
+    /**
+     * Altera o status de uma conversa
+     * @param Account $account
+     * @param int $conversationId
+     * @param string $status open|resolved|pending
+     * @return bool
+     */
+    public static function updateConversationStatus(Account $account, int $conversationId, string $status): bool
+    {
+        if (!in_array($status, ['open', 'resolved', 'pending'])) {
+            throw new \Exception('Status inválido. Use: open, resolved ou pending');
+        }
+
+        $client = new Client();
+        
+        try {
+            $response = $client->post($account->api_url . '/accounts/' . $account->account_id . '/conversations/' . $conversationId . '/toggle_status', [
+                'headers' => [
+                    'Content-Type' => 'application/json',
+                    'api_access_token' => $account->token,
+                ],
+                'json' => [
+                    'status' => $status
+                ]
+            ]);
+            
+            return $response->getStatusCode() === 200;
+            
+        } catch (GuzzleException $e) {
+            \Log::error('Erro ao alterar status da conversa: ' . $e->getMessage());
+            return false;
         }
     }
 } 
