@@ -7,12 +7,15 @@ fields:
         label: Conta AllWay
         type: dropdown
         options: getAccountOptions
+        placeholder: "-- Selecione uma conta --"
         required: true
         span: full
     inbox_id:
         label: Canal
         type: dropdown
         options: getInboxOptions
+        placeholder: "-- Selecione um canal --"
+        comment: "Antes de selecionar um canal, você precisa selecionar uma conta."
         required: true
         span: full
         dependsOn: account
@@ -20,6 +23,7 @@ fields:
         label: Nome do Contato
         type: text
         placeholder: Digite o nome do contato
+        comment: "Opcional. Se não for informado, será usado o nome do contato do canal selecionado."
         required: true
         span: full
     contact:
