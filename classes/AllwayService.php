@@ -2,14 +2,19 @@
 
 use Allway\Chat\Models\Account;
 use Allway\Chat\Models\MessageLog;
-use Allway\Chat\Classes\Helpers\Phone;
+use Allway\Chat\Classes\Helpers\Contact;
 use GuzzleHttp\Client;
 use GuzzleHttp\Exception\GuzzleException;
 
 class AllwayService
 {
+
     public static function sendText(Account $account, string $contactIdentifier, string $content, int $inboxId, string $contactName = '', array $contactCustomAttributes = [], array $conversationCustomAttributes = [], bool $forceNewConversation = false, int $conversationId = null)
     {
+        if (!Contact::validateIdentifier($contactIdentifier)) {
+            throw new \Exception('Identificador do contato inválido: ' . $contactIdentifier);
+        }
+        
         return self::sendMessage($account, $contactIdentifier, $inboxId, $contactName, [
             'content' => $content,
             'message_type' => 'outgoing',
@@ -19,6 +24,10 @@ class AllwayService
 
     public static function sendImage(Account $account, string $contactIdentifier, string $imageUrl, int $inboxId, string $contactName = '', string $caption = '', array $contactCustomAttributes = [], array $conversationCustomAttributes = [], bool $forceNewConversation = false, int $conversationId = null)
     {
+        if (!Contact::validateIdentifier($contactIdentifier)) {
+            throw new \Exception('Identificador do contato inválido: ' . $contactIdentifier);
+        }
+        
         if (empty($imageUrl)) {
             throw new \Exception('URL da imagem é obrigatória');
         }
@@ -28,6 +37,10 @@ class AllwayService
 
     public static function sendDocument(Account $account, string $contactIdentifier, string $documentUrl, int $inboxId, string $contactName = '', string $caption = '', string $filename = '', array $contactCustomAttributes = [], array $conversationCustomAttributes = [], bool $forceNewConversation = false, int $conversationId = null)
     {
+        if (!Contact::validateIdentifier($contactIdentifier)) {
+            throw new \Exception('Identificador do contato inválido: ' . $contactIdentifier);
+        }
+        
         if (empty($documentUrl)) {
             throw new \Exception('URL do documento é obrigatória');
         }
@@ -194,9 +207,15 @@ class AllwayService
         $contactData = [];
         
         if (filter_var($contactIdentifier, FILTER_VALIDATE_EMAIL)) {
+            if (!Contact::validateEmail($contactIdentifier)) {
+                throw new \Exception('Email inválido: ' . $contactIdentifier);
+            }
             $contactData['email'] = $contactIdentifier;
             $contactData['name'] = $contactName ?: $contactIdentifier;
         } else {
+            if (!Contact::validatePhone($contactIdentifier)) {
+                throw new \Exception('Número de telefone inválido: ' . $contactIdentifier);
+            }
             $formattedPhone = self::normalizePhoneNumber($contactIdentifier);
             $contactData['phone_number'] = $formattedPhone;
             $contactData['name'] = $contactName ?: $formattedPhone;
@@ -234,7 +253,7 @@ class AllwayService
         }
         
         try {
-            return Phone::formatInternational($phone);
+            return Contact::normalizeIdentifier($phone);
         } catch (\Exception $e) {
             return '+55' . $cleanPhone;
         }
@@ -964,12 +983,20 @@ class AllwayService
 
     public static function findContact(Account $account, string $contactIdentifier): ?array
     {
+        if (!Contact::validateIdentifier($contactIdentifier)) {
+            throw new \Exception('Identificador do contato inválido: ' . $contactIdentifier);
+        }
+        
         $contactData = self::prepareContactData($contactIdentifier, '');
         return self::filterContact($account, $contactData);
     }
 
     public static function updateContactAttributes(Account $account, string $contactIdentifier, array $customAttributes = [], array $additionalAttributes = [], int $inboxId = null): ?array
     {
+        if (!Contact::validateIdentifier($contactIdentifier)) {
+            throw new \Exception('Identificador do contato inválido: ' . $contactIdentifier);
+        }
+        
         if ($inboxId) {
             $inbox = self::getInboxById($account, $inboxId);
             if (!$inbox) {
@@ -1074,6 +1101,10 @@ class AllwayService
      */
     public static function sendTextToExistingConversation(Account $account, string $contactIdentifier, string $content, int $inboxId, string $contactName = '', array $contactCustomAttributes = [])
     {
+        if (!Contact::validateIdentifier($contactIdentifier)) {
+            throw new \Exception('Identificador do contato inválido: ' . $contactIdentifier);
+        }
+        
         return self::sendText($account, $contactIdentifier, $content, $inboxId, $contactName, $contactCustomAttributes, [], false, null);
     }
 
@@ -1082,6 +1113,10 @@ class AllwayService
      */
     public static function sendTextNewConversation(Account $account, string $contactIdentifier, string $content, int $inboxId, string $contactName = '', array $contactCustomAttributes = [], array $conversationCustomAttributes = [])
     {
+        if (!Contact::validateIdentifier($contactIdentifier)) {
+            throw new \Exception('Identificador do contato inválido: ' . $contactIdentifier);
+        }
+        
         return self::sendText($account, $contactIdentifier, $content, $inboxId, $contactName, $contactCustomAttributes, $conversationCustomAttributes, true, null);
     }
 
@@ -1090,6 +1125,10 @@ class AllwayService
      */
     public static function sendTextToSpecificConversation(Account $account, int $conversationId, string $contactIdentifier, string $content, int $inboxId, string $contactName = '', array $contactCustomAttributes = [], array $conversationCustomAttributes = [])
     {
+        if (!Contact::validateIdentifier($contactIdentifier)) {
+            throw new \Exception('Identificador do contato inválido: ' . $contactIdentifier);
+        }
+        
         return self::sendText($account, $contactIdentifier, $content, $inboxId, $contactName, $contactCustomAttributes, $conversationCustomAttributes, false, $conversationId);
     }
 
