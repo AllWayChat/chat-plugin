@@ -507,7 +507,7 @@ class Accounts extends BaseController
                 ],
                 'prompt' => 'Adicionar Etiqueta',
                 'span' => 'full',
-                'comment' => 'Etiquetas que serão aplicadas à conversa no Chatwoot.',
+                'comment' => 'Etiquetas que serão aplicadas à conversa no Allway Chat.',
                 'tab' => 'Etiquetas'
             ],
             'conversation_status' => [

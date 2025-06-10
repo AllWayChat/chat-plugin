@@ -1138,7 +1138,7 @@ class AllwayService
     }
 
     /**
-     * Busca todas as labels disponíveis na conta Chatwoot
+     * Busca todas as labels disponíveis na conta Allway Chat
      */
     public static function getAccountLabels(Account $account): array
     {
@@ -1156,7 +1156,7 @@ class AllwayService
             return $responseData['payload'] ?? [];
             
         } catch (GuzzleException $e) {
-            throw new \Exception('Failed to get labels from Chatwoot: ' . $e->getMessage());
+            throw new \Exception('Failed to get labels from Allway Chat: ' . $e->getMessage());
         }
     }
 
@@ -1213,7 +1213,7 @@ class AllwayService
     }
 
     /**
-     * Busca custom attributes da conta do Chatwoot
+     * Busca custom attributes da conta do Allway Chat
      */
     public static function getAccountCustomAttributes(Account $account, int $attributeModel = 0): array
     {
@@ -1234,7 +1234,7 @@ class AllwayService
             return $responseData ?? [];
             
         } catch (GuzzleException $e) {
-            \Log::error('Erro ao buscar custom attributes do Chatwoot: ' . $e->getMessage());
+            \Log::error('Erro ao buscar custom attributes do Allway Chat: ' . $e->getMessage());
             return [];
         }
     }

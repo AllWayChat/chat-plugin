@@ -66,7 +66,7 @@ class Account extends Model
     }
 
     /**
-     * Busca as labels disponíveis na conta Chatwoot
+     * Busca as labels disponíveis na conta Allway Chat
      */
     public function getLabelsOptions()
     {
@@ -98,7 +98,7 @@ class Account extends Model
                     }
                 }
             } catch (\Exception $e) {
-                \Log::error('Erro ao buscar labels do Chatwoot: ' . $e->getMessage());
+                \Log::error('Erro ao buscar labels do Allway Chat: ' . $e->getMessage());
             }
         }
         
@@ -106,7 +106,7 @@ class Account extends Model
     }
 
     /**
-     * Busca os custom attributes de contato disponíveis na conta Chatwoot
+     * Busca os custom attributes de contato disponíveis na conta Allway Chat
      */
     public function getContactCustomAttributesOptions()
     {
@@ -115,7 +115,7 @@ class Account extends Model
     }
 
     /**
-     * Busca os custom attributes de conversa disponíveis na conta Chatwoot
+     * Busca os custom attributes de conversa disponíveis na conta Allway Chat
      */
     public function getConversationCustomAttributesOptions()
     {
@@ -145,7 +145,7 @@ class Account extends Model
                     }
                 }
             } catch (\Exception $e) {
-                \Log::error('Erro ao buscar custom attributes do Chatwoot: ' . $e->getMessage());
+                \Log::error('Erro ao buscar custom attributes do Allway Chat: ' . $e->getMessage());
             }
         }
         

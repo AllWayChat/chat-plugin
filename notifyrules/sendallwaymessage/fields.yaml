@@ -3,6 +3,14 @@
 # ===================================
 
 fields:
+    account_type:
+        label: Tipo de Conta
+        type: balloon-selector
+        options:
+            account: Selecionar conta existente
+            account_id: Informar ID da conta
+        default: account
+        span: full
     account:
         label: Conta AllWay
         type: dropdown
@@ -10,6 +18,21 @@ fields:
         placeholder: "-- Selecione uma conta --"
         required: true
         span: full
+        trigger:
+            action: show
+            field: account_type
+            condition: value[account]
+    account_id:
+        label: ID da Conta
+        type: text
+        placeholder: "{{ variable }} ou ID direto da conta"
+        comment: "Suporta Twig: {{ hotel.allway_chat_account_id }}, {{ variable }}, etc."
+        required: true
+        span: full
+        trigger:
+            action: show
+            field: account_type
+            condition: value[account_id]
     inbox_id:
         label: Canal
         type: dropdown
@@ -19,6 +42,21 @@ fields:
         required: true
         span: full
         dependsOn: account
+        trigger:
+            action: show
+            field: account_type
+            condition: value[account]
+    inbox_id_text:
+        label: ID do Canal
+        type: text
+        placeholder: "{{ variable }} ou ID direto do canal"
+        comment: "Suporta Twig: {{ reservation.inbox_id }}, {{ variable }}, etc."
+        required: true
+        span: full
+        trigger:
+            action: show
+            field: account_type
+            condition: value[account_id]
     contact_name:
         label: Nome do Contato
         type: text
@@ -133,7 +171,7 @@ fields:
                         condition: value[contact]
                     required: true
                     span: left
-                    dependsOn: [account, type]
+                    dependsOn: [account, account_id, type]
                 key_conversation:
                     label: Campo
                     type: dropdown
@@ -144,7 +182,7 @@ fields:
                         condition: value[conversation]
                     required: true
                     span: left
-                    dependsOn: [account, type]
+                    dependsOn: [account, account_id, type]
                 value:
                     label: Valor
                     type: textarea
@@ -166,10 +204,10 @@ fields:
                     options: getEtiquetasOptions
                     required: true
                     span: full
-                    dependsOn: account
+                    dependsOn: [account, account_id]
         prompt: Adicionar Etiqueta
         span: full
-        comment: "Etiquetas que serão aplicadas à conversa no Chatwoot."
+        comment: "Etiquetas que serão aplicadas à conversa no Allway Chat."
     conversation_status:
         label: Status da Conversa
         type: dropdown

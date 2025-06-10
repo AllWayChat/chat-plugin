@@ -10,8 +10,11 @@ class SendAllwayMessage extends ActionBase
     public function defineValidationRules()
     {
         return [
-            'account'        => 'required',
-            'inbox_id'       => 'required',
+            'account_type'   => 'required|in:account,account_id',
+            'account'        => 'required_if:account_type,account',
+            'account_id'     => 'required_if:account_type,account_id',
+            'inbox_id'       => 'required_if:account_type,account',
+            'inbox_id_text'  => 'required_if:account_type,account_id',
             'contact'        => 'required',
             'message_type'   => 'required|in:text,image,document',
             'text'           => 'required_if:message_type,text',
@@ -40,8 +43,36 @@ class SendAllwayMessage extends ActionBase
         $messageTypeLabel = $this->getMessageTypeOptions()[$messageType] ?? $messageType;
         $contact = $this->host->contact ?? '';
         $conversationControl = $this->host->conversation_control ?? 'default';
+        $accountType = $this->host->account_type ?? 'account';
         
         $text = 'Enviar ' . $messageTypeLabel . ' para: ' . $contact;
+        
+        if ($accountType === 'account' && !empty($this->host->account)) {
+            $account = Account::find($this->host->account);
+            if ($account) {
+                $text .= ' (Conta: ' . $account->name;
+                
+                if (!empty($this->host->inbox_id)) {
+                    $inboxes = AllwayService::getAccountInboxes($account);
+                    foreach ($inboxes as $inbox) {
+                        if ($inbox['id'] == $this->host->inbox_id) {
+                            $text .= ', Canal: ' . $inbox['name'] . ' (' . $inbox['channel_type'] . ')';
+                            break;
+                        }
+                    }
+                }
+                
+                $text .= ')';
+            }
+        } elseif ($accountType === 'account_id' && !empty($this->host->account_id)) {
+            $text .= ' (ID da conta: ' . $this->host->account_id;
+            
+            if (!empty($this->host->inbox_id_text)) {
+                $text .= ', Canal ID: ' . $this->host->inbox_id_text;
+            }
+            
+            $text .= ')';
+        }
         
         // Adicionar informação sobre o controle de conversa se não for padrão
         if ($conversationControl !== 'default') {
@@ -67,12 +98,6 @@ class SendAllwayMessage extends ActionBase
 
     public function triggerAction($params)
     {
-        $account = Account::find($this->host->account);
-
-        if (!$account || !$account->is_active) {
-            return;
-        }
-
         $params = $params ?: [];
         $data = [];
 
@@ -89,9 +114,31 @@ class SendAllwayMessage extends ActionBase
 
         $data = $params + $data;
 
+        $accountType = $this->host->account_type ?? 'account';
+        $account = null;
+        
+        if ($accountType === 'account') {
+            $account = Account::find($this->host->account);
+        } else if ($accountType === 'account_id') {
+            $accountId = Lazy::twigRawParser((string)$this->host->account_id, $data);
+            $account = Account::find($accountId);
+        }
+
+        if (!$account || !$account->is_active) {
+            return;
+        }
+
+        $inboxId = null;
+        
+        if ($accountType === 'account') {
+            $inboxId = (int)$this->host->inbox_id;
+        } else if ($accountType === 'account_id') {
+            $inboxIdRaw = Lazy::twigRawParser((string)$this->host->inbox_id_text, $data);
+            $inboxId = (int)$inboxIdRaw;
+        }
+
         $contactIdentifier = Lazy::twigRawParser((string)$this->host->contact, $data);
         $contactName = Lazy::twigRawParser((string)($this->host->contact_name ?? ''), $data);
-        $inboxId = (int)$this->host->inbox_id;
         $messageType = (string)($this->host->message_type ?? 'text');
 
         $conversationControl = (string)($this->host->conversation_control ?? 'default');
@@ -214,7 +261,7 @@ class SendAllwayMessage extends ActionBase
     
     public function getInboxOptions(): array
     {
-        $accountId = post('account') ?? $this->host->account ?? null;
+        $accountId = post('account') ?? post('account_id') ?? $this->host->account ?? $this->host->account_id ?? null;
         
         if (!$accountId) {
             return [];
@@ -230,7 +277,7 @@ class SendAllwayMessage extends ActionBase
         
         if ($inboxes) {
             foreach ($inboxes as $inbox) {
-                $options[$inbox['id']] = $inbox['name'] . ' (' . $inbox['channel_type'] . ')';
+                $options[$inbox['id']] = $inbox['name'] . ' (' . $inbox['channel_type'] . ') - ID: ' . $inbox['id'];
             }
         }
         
@@ -239,7 +286,7 @@ class SendAllwayMessage extends ActionBase
     
     public function getEtiquetasOptions(): array
     {
-        $accountId = post('account') ?? $this->host->account ?? null;
+        $accountId = post('account') ?? post('account_id') ?? $this->host->account ?? $this->host->account_id ?? null;
         
         if (!$accountId) {
             return [];
@@ -255,7 +302,7 @@ class SendAllwayMessage extends ActionBase
     
     public function getContactCustomAttributesKeyOptions(): array
     {
-        $accountId = post('account') ?? $this->host->account ?? null;
+        $accountId = post('account') ?? post('account_id') ?? $this->host->account ?? $this->host->account_id ?? null;
         
         if (!$accountId) {
             return [];
@@ -271,7 +318,7 @@ class SendAllwayMessage extends ActionBase
     
     public function getConversationCustomAttributesKeyOptions(): array
     {
-        $accountId = post('account') ?? $this->host->account ?? null;
+        $accountId = post('account') ?? post('account_id') ?? $this->host->account ?? $this->host->account_id ?? null;
         
         if (!$accountId) {
             return [];
