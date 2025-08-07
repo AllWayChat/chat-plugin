@@ -131,6 +131,16 @@ class ChatStats extends ReportWidgetBase
                 'type' => 'string',
                 'description' => 'Labels a serem excluídas do cálculo, separadas por vírgula',
             ],
+            'labels_mode' => [
+                'title' => 'Modo de Labels',
+                'type' => 'dropdown',
+                'default' => 'sum',
+                'options' => [
+                    'sum' => 'Somar (OR) - conversas com qualquer uma das labels',
+                    'intersect' => 'Interseção (AND) - conversas que têm TODAS as labels',
+                ],
+                'description' => 'Como combinar múltiplas labels no filtro',
+            ],
         ];
     }
 
@@ -196,8 +206,9 @@ class ChatStats extends ReportWidgetBase
         $period = $this->property('period');
         $labelsFilter = array_filter(array_map('trim', explode(',', $this->property('labels_filter', ''))));
         $ignoreLabels = array_filter(array_map('trim', explode(',', $this->property('ignore_labels', ''))));
+        $labelsMode = $this->property('labels_mode', 'sum');
 
-        $this->vars['statValue'] = $this->getStatValue($account, $statType, $period, $labelsFilter, $ignoreLabels);
+        $this->vars['statValue'] = $this->getStatValue($account, $statType, $period, $labelsFilter, $ignoreLabels, $labelsMode);
         $this->vars['statLabel'] = $this->getStatLabel($statType);
         $this->vars['periodLabel'] = $this->getPeriodLabel($period);
 
@@ -210,15 +221,15 @@ class ChatStats extends ReportWidgetBase
         /**
      * Busca o valor da estatística
      */
-    private function getStatValue(Account $account, string $statType, string $period, array $labelsFilter, array $ignoreLabels = []): int
+    private function getStatValue(Account $account, string $statType, string $period, array $labelsFilter, array $ignoreLabels = [], string $labelsMode = 'sum'): int
     {
         if (in_array($statType, ['conversations', 'open_conversations', 'resolved_conversations', 'pending_conversations'])) {
             // Se há labels a ignorar, usar lógica de subtração
             if (!empty($ignoreLabels)) {
-                return $this->calculateWithIgnoredLabels($account, $statType, $period, $labelsFilter, $ignoreLabels);
+                return $this->calculateWithIgnoredLabels($account, $statType, $period, $labelsFilter, $ignoreLabels, $labelsMode);
             }
             
-            $stats = AllwayService::getConversationsStats($account, $period, [], $labelsFilter);
+            $stats = AllwayService::getConversationsStats($account, $period, [], $labelsFilter, $labelsMode);
             
             switch ($statType) {
                 case 'conversations':
@@ -249,22 +260,22 @@ class ChatStats extends ReportWidgetBase
     /**
      * Calcula valor com labels ignoradas
      */
-    private function calculateWithIgnoredLabels(Account $account, string $statType, string $period, array $labelsFilter, array $ignoreLabels): int
+    private function calculateWithIgnoredLabels(Account $account, string $statType, string $period, array $labelsFilter, array $ignoreLabels, string $labelsMode = 'sum'): int
     {
         // Buscar com filtro de labels (se houver)
-        $baseStats = AllwayService::getConversationsStats($account, $period, [], $labelsFilter);
+        $baseStats = AllwayService::getConversationsStats($account, $period, [], $labelsFilter, $labelsMode);
         $baseTotal = $baseStats['total_conversations'];
         
         // Se não há filtro base, usar total geral
         if (empty($labelsFilter)) {
-            $totalStats = AllwayService::getConversationsStats($account, $period, [], []);
+            $totalStats = AllwayService::getConversationsStats($account, $period, [], [], 'sum');
             $baseTotal = $totalStats['total_conversations'];
         }
         
-        // Buscar soma das labels a ignorar
+        // Buscar soma das labels a ignorar (sempre usar 'sum' para ignorar qualquer uma)
         $ignoredTotal = 0;
         if (!empty($ignoreLabels)) {
-            $ignoredStats = AllwayService::getConversationsStats($account, $period, [], $ignoreLabels);
+            $ignoredStats = AllwayService::getConversationsStats($account, $period, [], $ignoreLabels, 'sum');
             $ignoredTotal = $ignoredStats['total_conversations'];
         }
         

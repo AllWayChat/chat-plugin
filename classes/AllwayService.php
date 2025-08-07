@@ -1306,7 +1306,7 @@ class AllwayService
      * @param array $labels Array de labels para filtrar (opcional)
      * @return array
      */
-    public static function getConversationsStats(Account $account, string $period = '30dias', array $inboxIds = [], array $labels = []): array
+    public static function getConversationsStats(Account $account, string $period = '30dias', array $inboxIds = [], array $labels = [], string $labelsMode = 'sum'): array
     {
         $client = new Client();
         
@@ -1319,32 +1319,38 @@ class AllwayService
             
             // Se há filtro por labels, usar type=label para cada label
             if (!empty($labels)) {
-                $totalConversations = 0;
-                
                 // Buscar IDs das labels pelo nome
                 $labelIds = self::getLabelIdsByNames($account, $labels);
                 
-                foreach ($labelIds as $labelId) {
-                    $params = [
-                        'metric' => 'conversations_count',
-                        'type' => 'label',
-                        'id' => $labelId,
-                        'since' => $sinceTimestamp,
-                        'until' => $untilTimestamp
-                    ];
+                if ($labelsMode === 'intersect' && count($labelIds) > 1) {
+                    // Modo interseção: buscar conversas que têm TODAS as labels
+                    $totalConversations = self::getConversationsWithAllLabels($account, $labelIds, $sinceTimestamp, $untilTimestamp);
+                } else {
+                    // Modo soma: somar conversas de cada label separadamente (comportamento original)
+                    $totalConversations = 0;
                     
-                    $response = $client->get($apiUrl . '/accounts/' . $account->account_id . '/reports', [
-                        'headers' => [
-                            'api_access_token' => $account->token,
-                        ],
-                        'query' => $params
-                    ]);
-                    
-                    $responseData = json_decode($response->getBody(), true);
-                    
-                    if (is_array($responseData)) {
-                        foreach ($responseData as $dataPoint) {
-                            $totalConversations += (int) ($dataPoint['value'] ?? 0);
+                    foreach ($labelIds as $labelId) {
+                        $params = [
+                            'metric' => 'conversations_count',
+                            'type' => 'label',
+                            'id' => $labelId,
+                            'since' => $sinceTimestamp,
+                            'until' => $untilTimestamp
+                        ];
+                        
+                        $response = $client->get($apiUrl . '/accounts/' . $account->account_id . '/reports', [
+                            'headers' => [
+                                'api_access_token' => $account->token,
+                            ],
+                            'query' => $params
+                        ]);
+                        
+                        $responseData = json_decode($response->getBody(), true);
+                        
+                        if (is_array($responseData)) {
+                            foreach ($responseData as $dataPoint) {
+                                $totalConversations += (int) ($dataPoint['value'] ?? 0);
+                            }
                         }
                     }
                 }
@@ -1660,6 +1666,78 @@ class AllwayService
                     $today->copy()->subDays(30)->startOfDay()->toISOString(), 
                     $today->copy()->endOfDay()->toISOString()
                 ];
+        }
+    }
+
+    /**
+     * Busca conversas que possuem TODAS as labels especificadas (interseção)
+     * @param Account $account
+     * @param array $labelIds
+     * @param int $sinceTimestamp
+     * @param int $untilTimestamp
+     * @return int
+     */
+    private static function getConversationsWithAllLabels(Account $account, array $labelIds, int $sinceTimestamp, int $untilTimestamp): int
+    {
+        $client = new Client();
+        $apiUrl = $account->api_url;
+        
+        try {
+            // Buscar todas as conversas no período especificado
+            $allConversations = [];
+            $page = 1;
+            $perPage = 25; // Limite da API
+            
+            do {
+                $response = $client->get($apiUrl . '/accounts/' . $account->account_id . '/conversations', [
+                    'headers' => [
+                        'api_access_token' => $account->token,
+                    ],
+                    'query' => [
+                        'page' => $page,
+                        'per_page' => $perPage,
+                        'created_after' => date('Y-m-d H:i:s', $sinceTimestamp),
+                        'created_before' => date('Y-m-d H:i:s', $untilTimestamp),
+                    ]
+                ]);
+                
+                $data = json_decode($response->getBody(), true);
+                $conversations = $data['data']['conversations'] ?? [];
+                
+                foreach ($conversations as $conversation) {
+                    $allConversations[] = $conversation;
+                }
+                
+                $page++;
+                
+                // Continuar se há mais páginas
+            } while (count($conversations) == $perPage);
+            
+            // Filtrar conversas que têm TODAS as labels especificadas
+            $conversationsWithAllLabels = [];
+            
+            foreach ($allConversations as $conversation) {
+                $conversationLabels = collect($conversation['labels'] ?? [])->pluck('id')->toArray();
+                
+                // Verificar se a conversa tem todas as labels necessárias
+                $hasAllLabels = true;
+                foreach ($labelIds as $requiredLabelId) {
+                    if (!in_array($requiredLabelId, $conversationLabels)) {
+                        $hasAllLabels = false;
+                        break;
+                    }
+                }
+                
+                if ($hasAllLabels) {
+                    $conversationsWithAllLabels[] = $conversation['id'];
+                }
+            }
+            
+            return count($conversationsWithAllLabels);
+            
+        } catch (Exception $e) {
+            \Log::error('Erro ao buscar conversas com todas as labels: ' . $e->getMessage());
+            return 0;
         }
     }
 } 
