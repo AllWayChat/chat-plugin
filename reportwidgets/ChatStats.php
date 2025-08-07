@@ -375,6 +375,6 @@ class ChatStats extends ReportWidgetBase
      */
     protected function loadAssets()
     {
-        $this->addCss('/plugins/allway/chat/reportwidgets/chatstats/css/chatstats.css');
+        $this->addCss('/plugins/allway/chat/reportwidgets/chatstats/assets/css/chatstats.css');
     }
 }
