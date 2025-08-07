@@ -5,6 +5,7 @@ use Allway\Chat\Models\MessageLog;
 use Allway\Chat\Classes\Helpers\Contact;
 use GuzzleHttp\Client;
 use GuzzleHttp\Exception\GuzzleException;
+use Illuminate\Support\Facades\Log;
 
 class AllwayService
 {
@@ -12,7 +13,8 @@ class AllwayService
     public static function sendText(Account $account, string $contactIdentifier, string $content, int $inboxId, string $contactName = '', array $contactCustomAttributes = [], array $conversationCustomAttributes = [], bool $forceNewConversation = false, int $conversationId = null, string $conversationStatus = null)
     {
         if (!Contact::validateIdentifier($contactIdentifier)) {
-            throw new \Exception('Identificador do contato inválido: ' . $contactIdentifier);
+            Log::debug('AllwayService: Identificador do contato inválido: ' . $contactIdentifier);
+            return;
         }
         
         return self::sendMessage($account, $contactIdentifier, $inboxId, $contactName, [
@@ -25,7 +27,8 @@ class AllwayService
     public static function sendImage(Account $account, string $contactIdentifier, string $imageUrl, int $inboxId, string $contactName = '', string $caption = '', array $contactCustomAttributes = [], array $conversationCustomAttributes = [], bool $forceNewConversation = false, int $conversationId = null, string $conversationStatus = null)
     {
         if (!Contact::validateIdentifier($contactIdentifier)) {
-            throw new \Exception('Identificador do contato inválido: ' . $contactIdentifier);
+            Log::debug('AllwayService: Identificador do contato inválido: ' . $contactIdentifier);
+            return;
         }
         
         if (empty($imageUrl)) {
@@ -38,7 +41,8 @@ class AllwayService
     public static function sendDocument(Account $account, string $contactIdentifier, string $documentUrl, int $inboxId, string $contactName = '', string $caption = '', string $filename = '', array $contactCustomAttributes = [], array $conversationCustomAttributes = [], bool $forceNewConversation = false, int $conversationId = null, string $conversationStatus = null)
     {
         if (!Contact::validateIdentifier($contactIdentifier)) {
-            throw new \Exception('Identificador do contato inválido: ' . $contactIdentifier);
+            Log::debug('AllwayService: Identificador do contato inválido: ' . $contactIdentifier);
+            return;
         }
         
         if (empty($documentUrl)) {
@@ -989,7 +993,8 @@ class AllwayService
     public static function findContact(Account $account, string $contactIdentifier): ?array
     {
         if (!Contact::validateIdentifier($contactIdentifier)) {
-            throw new \Exception('Identificador do contato inválido: ' . $contactIdentifier);
+            Log::debug('AllwayService: Identificador do contato inválido: ' . $contactIdentifier);
+            return [];
         }
         
         $contactData = self::prepareContactData($contactIdentifier, '');
@@ -999,7 +1004,8 @@ class AllwayService
     public static function updateContactAttributes(Account $account, string $contactIdentifier, array $customAttributes = [], array $additionalAttributes = [], int $inboxId = null): ?array
     {
         if (!Contact::validateIdentifier($contactIdentifier)) {
-            throw new \Exception('Identificador do contato inválido: ' . $contactIdentifier);
+            Log::debug('AllwayService: Identificador do contato inválido: ' . $contactIdentifier);
+            return [];
         }
         
         if ($inboxId) {
@@ -1107,7 +1113,8 @@ class AllwayService
     public static function sendTextToExistingConversation(Account $account, string $contactIdentifier, string $content, int $inboxId, string $contactName = '', array $contactCustomAttributes = [])
     {
         if (!Contact::validateIdentifier($contactIdentifier)) {
-            throw new \Exception('Identificador do contato inválido: ' . $contactIdentifier);
+            Log::debug('AllwayService: Identificador do contato inválido: ' . $contactIdentifier);
+            return;
         }
         
         return self::sendText($account, $contactIdentifier, $content, $inboxId, $contactName, $contactCustomAttributes, [], false, null);
@@ -1119,7 +1126,8 @@ class AllwayService
     public static function sendTextNewConversation(Account $account, string $contactIdentifier, string $content, int $inboxId, string $contactName = '', array $contactCustomAttributes = [], array $conversationCustomAttributes = [])
     {
         if (!Contact::validateIdentifier($contactIdentifier)) {
-            throw new \Exception('Identificador do contato inválido: ' . $contactIdentifier);
+            Log::debug('AllwayService: Identificador do contato inválido: ' . $contactIdentifier);
+            return;
         }
         
         return self::sendText($account, $contactIdentifier, $content, $inboxId, $contactName, $contactCustomAttributes, $conversationCustomAttributes, true, null);
@@ -1131,7 +1139,8 @@ class AllwayService
     public static function sendTextToSpecificConversation(Account $account, int $conversationId, string $contactIdentifier, string $content, int $inboxId, string $contactName = '', array $contactCustomAttributes = [], array $conversationCustomAttributes = [])
     {
         if (!Contact::validateIdentifier($contactIdentifier)) {
-            throw new \Exception('Identificador do contato inválido: ' . $contactIdentifier);
+            Log::debug('AllwayService: Identificador do contato inválido: ' . $contactIdentifier);
+            return;
         }
         
         return self::sendText($account, $contactIdentifier, $content, $inboxId, $contactName, $contactCustomAttributes, $conversationCustomAttributes, false, $conversationId);
