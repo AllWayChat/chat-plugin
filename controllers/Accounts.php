@@ -78,6 +78,8 @@ class Accounts extends BaseController
             }
         }
         
+        $labelsMode = $data['labels_mode'] ?? 'replace';
+        
         $conversationStatus = $data['conversation_status'] ?? null;
 
         if (!$contact) {
@@ -178,8 +180,9 @@ class Accounts extends BaseController
             // Aplicar labels se especificadas
             if (!empty($labels) && $conversationIdResult) {
                 try {
-                    AllwayService::addLabelsToConversation($account, $conversationIdResult, $labels);
-                    $messages[] = "Labels aplicadas: " . implode(', ', $labels);
+                    AllwayService::addLabelsToConversation($account, $conversationIdResult, $labels, $labelsMode);
+                    $modeText = $labelsMode === 'append' ? ' (adicionando às existentes)' : ' (substituindo existentes)';
+                    $messages[] = "Labels aplicadas: " . implode(', ', $labels) . $modeText;
                 } catch (\Exception $labelException) {
                     $messages[] = "Erro ao aplicar labels: " . $labelException->getMessage();
                     $hasError = true;
@@ -488,6 +491,18 @@ class Accounts extends BaseController
                 'span' => 'full',
                 'comment' => 'Campos personalizados que serão enviados para o Allway chat. Escolha se é para o Contato ou para a Conversa.',
                 'tab' => 'Campos Personalizados'
+            ],
+            'labels_mode' => [
+                'label' => 'Modo de Aplicação das Etiquetas',
+                'type' => 'radio',
+                'options' => [
+                    'replace' => 'Substituir (padrão do Allway Chat - remove etiquetas atuais)',
+                    'append' => 'Adicionar (mantém etiquetas atuais + adiciona novas)'
+                ],
+                'default' => 'replace',
+                'span' => 'full',
+                'comment' => 'Escolha como as etiquetas devem ser aplicadas na conversa.',
+                'tab' => 'Etiquetas'
             ],
             'labels' => [
                 'label' => 'Etiquetas',

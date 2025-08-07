@@ -1,0 +1,132 @@
+/* CSS básico do widget - SEGUINDO PADRÃO DO SHORTCUT */
+.report-widget-chatstats {
+    padding: 0 !important;
+    min-height: 180px !important;
+    border-radius: 0.75rem !important;
+    box-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.1), 0 2px 4px -1px rgba(0, 0, 0, 0.06) !important;
+    transition: box-shadow 0.2s ease;
+}
+
+.report-widget-chatstats:hover {
+    box-shadow: 0 10px 15px -3px rgba(0, 0, 0, 0.1), 0 4px 6px -2px rgba(0, 0, 0, 0.05) !important;
+}
+
+/* Animação do ícone (igual ao shortcut) */
+.fa-beat-hover:hover {
+    -webkit-animation-name: fa-beat;
+    animation-name: fa-beat;
+    -webkit-animation-delay: var(--fa-animation-delay, 0s);
+    animation-delay: var(--fa-animation-delay, 0s);
+    -webkit-animation-direction: var(--fa-animation-direction, normal);
+    animation-direction: var(--fa-animation-direction, normal);
+    -webkit-animation-duration: var(--fa-animation-duration, 1s);
+    animation-duration: var(--fa-animation-duration, 1s);
+    -webkit-animation-iteration-count: var(--fa-animation-iteration-count, infinite);
+    animation-iteration-count: var(--fa-animation-iteration-count, infinite);
+    -webkit-animation-timing-function: var(--fa-animation-timing, ease-in-out);
+    animation-timing-function: var(--fa-animation-timing, ease-in-out);
+}
+
+/* Estilos básicos para visual */
+.chat-stats-value {
+    font-size: 3rem;
+    font-weight: 900;
+    line-height: 0.9;
+    text-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
+}
+
+.chat-stats-label {
+    font-size: 0.95rem;
+    font-weight: 600;
+    margin-bottom: 0.25rem;
+    text-transform: uppercase;
+    letter-spacing: 0.05em;
+    opacity: 0.9;
+}
+
+.chat-stats-period {
+    font-size: 0.95rem;
+    opacity: 0.85;
+    font-weight: 600;
+    letter-spacing: 0.025em;
+}
+
+.chat-stats-icon {
+    transition: transform 0.3s ease;
+    filter: drop-shadow(0 2px 4px rgba(0, 0, 0, 0.1));
+}
+
+.chat-stats-icon:hover {
+    transform: scale(1.1);
+}
+
+.chat-stats-growth {
+    font-size: 1rem;
+    font-weight: 700;
+    display: inline-flex;
+    align-items: center;
+    padding: 0.5rem 1rem;
+    border-radius: 1.5rem;
+    text-shadow: 0 1px 3px rgba(0, 0, 0, 0.3);
+}
+
+.chat-stats-growth.up {
+    background: linear-gradient(135deg, #10b981 0%, #059669 100%);
+    color: white;
+}
+
+.chat-stats-growth.down {
+    background: linear-gradient(135deg, #ef4444 0%, #dc2626 100%);
+    color: white;
+}
+
+.chat-stats-growth.neutral {
+    background: linear-gradient(135deg, #6b7280 0%, #4b5563 100%);
+    color: white;
+}
+
+/* Gradientes sutis para cores */
+.report-widget-chatstats.bg-primary {
+    background: linear-gradient(135deg, #3b82f6 0%, #1d4ed8 100%) !important;
+}
+
+.report-widget-chatstats.bg-success {
+    background: linear-gradient(135deg, #10b981 0%, #047857 100%) !important;
+}
+
+.report-widget-chatstats.bg-danger {
+    background: linear-gradient(135deg, #ef4444 0%, #dc2626 100%) !important;
+}
+
+.report-widget-chatstats.bg-warning {
+    background: linear-gradient(135deg, #f59e0b 0%, #d97706 100%) !important;
+}
+
+.report-widget-chatstats.bg-info {
+    background: linear-gradient(135deg, #8b5cf6 0%, #7c3aed 100%) !important;
+}
+
+.report-widget-chatstats.bg-dark {
+    background: linear-gradient(135deg, #374151 0%, #1f2937 100%) !important;
+}
+
+/* Melhor contraste para cores escuras */
+.report-widget-chatstats.bg-primary .chat-stats-value,
+.report-widget-chatstats.bg-success .chat-stats-value,
+.report-widget-chatstats.bg-danger .chat-stats-value,
+.report-widget-chatstats.bg-warning .chat-stats-value,
+.report-widget-chatstats.bg-info .chat-stats-value,
+.report-widget-chatstats.bg-dark .chat-stats-value {
+    text-shadow: 0 2px 8px rgba(0, 0, 0, 0.3);
+}
+
+/* Contraste para cores claras */
+.report-widget-chatstats.bg-light-primary .chat-stats-value,
+.report-widget-chatstats.bg-light-success .chat-stats-value,
+.report-widget-chatstats.bg-light-info .chat-stats-value,
+.report-widget-chatstats.bg-light-warning .chat-stats-value,
+.report-widget-chatstats.bg-light-danger .chat-stats-value,
+.report-widget-chatstats.bg-light-dark .chat-stats-value {
+    color: #1f2937 !important;
+    text-shadow: none;
+}

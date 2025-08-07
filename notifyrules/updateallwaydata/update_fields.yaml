@@ -1,0 +1,202 @@
+fields:
+
+    # Configuração da Conta
+    account_type:
+        label: Tipo de Conta
+        type: radio
+        default: account
+        options:
+            account: Selecionar conta
+            account_id: Informar ID da conta via texto
+        span: full
+        comment: Escolha como a conta será identificada.
+
+    account:
+        label: Conta Allway
+        type: dropdown
+        placeholder: Selecione uma conta
+        options: getAccountOptions
+        trigger:
+            action: show
+            field: account_type
+            condition: value[account]
+        span: full
+
+    account_id:
+        label: ID da Conta
+        type: text
+        placeholder: "Ex: {{ model.account_id }}"
+        trigger:
+            action: show
+            field: account_type
+            condition: value[account_id]
+        span: full
+        comment: Pode usar Twig. Ex. {{ model.account_id }} ou texto fixo.
+
+    # Como encontrar a conversa
+    conversation_find:
+        label: Como Localizar Conversa
+        type: radio
+        default: by_id
+        options:
+            by_id: Por ID da conversa (mais direto)
+            by_contact: Por contato + canal (busca conversa mais recente do contato no canal especificado)
+        span: full
+        comment: Por ID é mais direto. Por contato+canal você informa o contato e o canal, e o sistema busca a conversa mais recente desse contato nesse canal.
+
+    conversation_id:
+        label: ID da Conversa
+        type: text
+        placeholder: "Ex: {{ model.conversation_id }}"
+        trigger:
+            action: show
+            field: conversation_find
+            condition: value[by_id]
+        span: full
+        comment: Pode usar Twig. Ex. {{ model.conversation_id }} ou número fixo.
+
+    contact:
+        label: Contato
+        type: text
+        placeholder: "Ex: {{ model.phone }} ou 5541988149449"
+        trigger:
+            action: show
+            field: conversation_find
+            condition: value[by_contact]
+        span: left
+        comment: Email ou telefone do contato. Sistema vai buscar a conversa mais recente deste contato.
+
+    _canal_section:
+        type: section
+        label: Canal (preencha o campo correspondente ao tipo de conta escolhido)
+        trigger:
+            action: show
+            field: conversation_find
+            condition: value[by_contact]
+        span: full
+        comment: Use o campo dropdown se escolheu "Selecionar conta", ou o campo texto se escolheu "Informar ID da conta". O sistema validará automaticamente.
+
+    inbox_id:
+        label: Canal (dropdown)
+        type: dropdown
+        placeholder: Primeiro selecione uma conta
+        options: getInboxOptions
+        dependsOn: account
+        trigger:
+            action: show
+            field: conversation_find
+            condition: value[by_contact]
+        span: left
+        comment: Use quando tipo de conta = "Selecionar conta".
+
+    inbox_id_text:
+        label: ID do Canal (texto)
+        type: text
+        placeholder: "Ex: {{ model.inbox_id }} ou 1"
+        trigger:
+            action: show
+            field: conversation_find
+            condition: value[by_contact]
+        span: right
+        comment: Use quando tipo de conta = "Informar ID da conta".
+
+    # Campos personalizados
+    custom_attributes:
+        label: Campos Personalizados
+        type: repeater
+        form:
+            fields:
+                type:
+                    label: Tipo
+                    type: dropdown
+                    options:
+                        contact: Contato
+                        conversation: Conversa
+                    default: contact
+                    required: true
+                    span: auto
+
+                key:
+                    label: Campo
+                    type: dropdown
+                    options: getContactCustomAttributesKeyOptions
+                    trigger:
+                        action: show
+                        field: type
+                        condition: value[contact]
+                    required: true
+                    span: auto
+                    dependsOn: ['account', 'type']
+
+                key_conversation:
+                    label: Campo
+                    type: dropdown
+                    options: getConversationCustomAttributesKeyOptions
+                    trigger:
+                        action: show
+                        field: type
+                        condition: value[conversation]
+                    required: true
+                    span: auto
+                    dependsOn: ['account', 'type']
+
+                value:
+                    label: Valor
+                    type: text
+                    placeholder: "Ex: {{ model.custom_field }}"
+                    span: auto
+                    comment: Pode usar Twig.
+
+        prompt: Adicionar Campo Personalizado
+        span: full
+        comment: Campos personalizados que serão atualizados.
+
+    # Etiquetas
+    labels_mode:
+        label: Modo de Aplicação das Etiquetas
+        type: radio
+        options:
+            replace: Substituir (padrão do Allway Chat - remove etiquetas atuais)
+            append: Adicionar (mantém etiquetas atuais + adiciona novas)
+        default: replace
+        span: full
+        comment: Escolha como as etiquetas devem ser aplicadas na conversa.
+
+    etiquetas:
+        label: Etiquetas
+        type: repeater
+        form:
+            fields:
+                etiqueta:
+                    label: Etiqueta
+                    type: dropdown
+                    placeholder: Primeiro selecione uma conta
+                    options: getEtiquetasOptions
+                    required: true
+                    span: full
+                    dependsOn: account
+
+        prompt: Adicionar Etiqueta
+        span: full
+        comment: Etiquetas que serão aplicadas à conversa.
+
+    # Status da conversa
+    conversation_status:
+        label: Status da Conversa
+        type: dropdown
+        options:
+            '': Não alterar status
+            open: Aberta
+            pending: Pendente
+            resolved: Resolvida
+        default: ''
+        span: full
+        comment: Status que será aplicado à conversa.
+
+    # Código PHP extra
+    extra_php_code:
+        label: Código PHP Extra
+        type: codeeditor
+        language: php
+        span: full
+        comment: Código PHP opcional que será executado antes da ação. Variáveis dos dados estarão disponíveis. 

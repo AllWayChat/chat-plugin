@@ -1162,11 +1162,33 @@ class AllwayService
 
     /**
      * Adiciona labels a uma conversa
+     * @param Account $account
+     * @param int $conversationId
+     * @param array $labels
+     * @param string $mode 'replace' (padrão) ou 'append'
+     * @return bool
      */
-    public static function addLabelsToConversation(Account $account, int $conversationId, array $labels): bool
+    public static function addLabelsToConversation(Account $account, int $conversationId, array $labels, string $mode = 'replace'): bool
     {
         if (empty($labels)) {
             return true;
+        }
+
+        $finalLabels = $labels;
+        
+        // Se o modo for 'append', primeiro buscar as labels atuais
+        if ($mode === 'append') {
+            try {
+                $currentLabels = self::getConversationLabels($account, $conversationId);
+                
+                // A API retorna um array simples de strings, então usamos diretamente
+                // Combinar labels atuais com as novas, removendo duplicatas
+                $finalLabels = array_unique(array_merge($currentLabels, $labels));
+                
+            } catch (\Exception $e) {
+                // Se não conseguir buscar as labels atuais, continua apenas com as novas
+                \Log::warning('Não foi possível buscar labels atuais da conversa ' . $conversationId . ': ' . $e->getMessage());
+            }
         }
 
         $client = new Client();
@@ -1178,7 +1200,7 @@ class AllwayService
                     'api_access_token' => $account->token,
                 ],
                 'json' => [
-                    'labels' => $labels
+                    'labels' => $finalLabels
                 ]
             ]);
             
@@ -1191,6 +1213,9 @@ class AllwayService
 
     /**
      * Busca labels de uma conversa específica
+     * @param Account $account
+     * @param int $conversationId
+     * @return array Array de strings com os nomes das labels
      */
     public static function getConversationLabels(Account $account, int $conversationId): array
     {
@@ -1270,6 +1295,371 @@ class AllwayService
         } catch (GuzzleException $e) {
             \Log::error('Erro ao alterar status da conversa: ' . $e->getMessage());
             return false;
+        }
+    }
+
+    /**
+     * Busca estatísticas de conversas na API do Chatwoot
+     * @param Account $account
+     * @param string $period hoje|ontem|7dias|30dias|este_mes|mes_passado|esta_semana|semana_passada
+     * @param array $inboxIds Array de IDs dos inboxes (opcional)
+     * @param array $labels Array de labels para filtrar (opcional)
+     * @return array
+     */
+    public static function getConversationsStats(Account $account, string $period = '30dias', array $inboxIds = [], array $labels = []): array
+    {
+        $client = new Client();
+        
+        try {
+            [$dateStart, $dateEnd] = self::getPeriodDates($period);
+            $sinceTimestamp = strtotime($dateStart);
+            $untilTimestamp = strtotime($dateEnd);
+            
+            $apiUrl = str_replace('/api/v1', '/api/v2', $account->api_url);
+            
+            // Se há filtro por labels, usar type=label para cada label
+            if (!empty($labels)) {
+                $totalConversations = 0;
+                
+                // Buscar IDs das labels pelo nome
+                $labelIds = self::getLabelIdsByNames($account, $labels);
+                
+                foreach ($labelIds as $labelId) {
+                    $params = [
+                        'metric' => 'conversations_count',
+                        'type' => 'label',
+                        'id' => $labelId,
+                        'since' => $sinceTimestamp,
+                        'until' => $untilTimestamp
+                    ];
+                    
+                    $response = $client->get($apiUrl . '/accounts/' . $account->account_id . '/reports', [
+                        'headers' => [
+                            'api_access_token' => $account->token,
+                        ],
+                        'query' => $params
+                    ]);
+                    
+                    $responseData = json_decode($response->getBody(), true);
+                    
+                    if (is_array($responseData)) {
+                        foreach ($responseData as $dataPoint) {
+                            $totalConversations += (int) ($dataPoint['value'] ?? 0);
+                        }
+                    }
+                }
+            } else {
+                // Sem filtro por labels, usar type=account
+                $params = [
+                    'metric' => 'conversations_count',
+                    'type' => 'account',
+                    'since' => $sinceTimestamp,
+                    'until' => $untilTimestamp
+                ];
+                
+                $response = $client->get($apiUrl . '/accounts/' . $account->account_id . '/reports', [
+                    'headers' => [
+                        'api_access_token' => $account->token,
+                    ],
+                    'query' => $params
+                ]);
+                
+                $responseData = json_decode($response->getBody(), true);
+                
+                $totalConversations = 0;
+                if (is_array($responseData)) {
+                    foreach ($responseData as $dataPoint) {
+                        $totalConversations += (int) ($dataPoint['value'] ?? 0);
+                    }
+                }
+            }
+            
+            return [
+                'total_conversations' => $totalConversations,
+                'open_conversations' => $totalConversations,
+                'resolved_conversations' => 0,
+                'pending_conversations' => 0
+            ];
+            
+        } catch (GuzzleException $e) {
+            \Log::error('Erro ao buscar estatísticas de conversas: ' . $e->getMessage());
+            return [
+                'total_conversations' => 0,
+                'open_conversations' => 0,
+                'resolved_conversations' => 0,
+                'pending_conversations' => 0
+            ];
+        }
+    }
+
+    /**
+     * Busca estatísticas de mensagens na API do Chatwoot
+     * @param Account $account
+     * @param string $period
+     * @param array $inboxIds
+     * @return array
+     */
+    public static function getMessagesStats(Account $account, string $period = '30dias', array $inboxIds = []): array
+    {
+        $client = new Client();
+        
+        try {
+            [$dateStart, $dateEnd] = self::getPeriodDates($period);
+            $sinceTimestamp = strtotime($dateStart);
+            $untilTimestamp = strtotime($dateEnd);
+            
+            $apiUrl = str_replace('/api/v1', '/api/v2', $account->api_url);
+            
+            // Buscar incoming_messages_count
+            $paramsIncoming = [
+                'metric' => 'incoming_messages_count',
+                'type' => 'account',
+                'since' => $sinceTimestamp,
+                'until' => $untilTimestamp
+            ];
+            
+            $responseIncoming = $client->get($apiUrl . '/accounts/' . $account->account_id . '/reports', [
+                'headers' => [
+                    'api_access_token' => $account->token,
+                ],
+                'query' => $paramsIncoming
+            ]);
+            
+            // Buscar outgoing_messages_count
+            $paramsOutgoing = [
+                'metric' => 'outgoing_messages_count',
+                'type' => 'account',
+                'since' => $sinceTimestamp,
+                'until' => $untilTimestamp
+            ];
+            
+            $responseOutgoing = $client->get($apiUrl . '/accounts/' . $account->account_id . '/reports', [
+                'headers' => [
+                    'api_access_token' => $account->token,
+                ],
+                'query' => $paramsOutgoing
+            ]);
+            
+            $incomingData = json_decode($responseIncoming->getBody(), true);
+            $outgoingData = json_decode($responseOutgoing->getBody(), true);
+            
+            // Somar valores
+            $incomingMessages = 0;
+            if (is_array($incomingData)) {
+                foreach ($incomingData as $dataPoint) {
+                    $incomingMessages += (int) ($dataPoint['value'] ?? 0);
+                }
+            }
+            
+            $outgoingMessages = 0;
+            if (is_array($outgoingData)) {
+                foreach ($outgoingData as $dataPoint) {
+                    $outgoingMessages += (int) ($dataPoint['value'] ?? 0);
+                }
+            }
+            
+            return [
+                'total_messages' => $incomingMessages + $outgoingMessages,
+                'outgoing_messages' => $outgoingMessages,
+                'incoming_messages' => $incomingMessages
+            ];
+            
+        } catch (GuzzleException $e) {
+            \Log::error('Erro ao buscar estatísticas de mensagens: ' . $e->getMessage());
+            return [
+                'total_messages' => 0,
+                'outgoing_messages' => 0,
+                'incoming_messages' => 0
+            ];
+        }
+    }
+
+    /**
+     * Busca IDs das labels pelo nome usando cache
+     * @param Account $account
+     * @param array $labelNames
+     * @return array
+     */
+    private static function getLabelIdsByNames(Account $account, array $labelNames): array
+    {
+        $labelsMap = self::getCachedLabelsMap($account);
+        $labelIds = [];
+        
+        foreach ($labelNames as $labelName) {
+            // Tentar buscar pelo nome exato primeiro
+            if (isset($labelsMap[$labelName])) {
+                $labelIds[] = $labelsMap[$labelName];
+                continue;
+            }
+            
+            // Tentar buscar pelo slug
+            $slug = self::createLabelSlug($labelName);
+            if (isset($labelsMap[$slug])) {
+                $labelIds[] = $labelsMap[$slug];
+                continue;
+            }
+            
+            // Busca case-insensitive por último
+            foreach ($labelsMap as $cachedName => $cachedId) {
+                if (strtolower($cachedName) === strtolower($labelName)) {
+                    $labelIds[] = $cachedId;
+                    break;
+                }
+            }
+        }
+        
+        return $labelIds;
+    }
+
+    /**
+     * Busca e cacheia o mapeamento de labels
+     * @param Account $account
+     * @return array
+     */
+    private static function getCachedLabelsMap(Account $account): array
+    {
+        $cacheKey = "allway_chat_labels_map_account_{$account->account_id}";
+        
+        return \Cache::remember($cacheKey, 3600, function () use ($account) {
+            return self::fetchLabelsFromApi($account);
+        });
+    }
+
+    /**
+     * Busca labels da API do Chatwoot
+     * @param Account $account
+     * @return array
+     */
+    private static function fetchLabelsFromApi(Account $account): array
+    {
+        $client = new Client();
+        $labelsMap = [];
+        
+        try {
+            $response = $client->get($account->api_url . '/accounts/' . $account->account_id . '/labels', [
+                'headers' => [
+                    'api_access_token' => $account->token,
+                ]
+            ]);
+            
+            $responseData = json_decode($response->getBody(), true);
+            $allLabels = $responseData['payload'] ?? [];
+            
+            foreach ($allLabels as $label) {
+                $labelTitle = $label['title'] ?? '';
+                $labelId = $label['id'] ?? null;
+                
+                if ($labelTitle && $labelId) {
+                    // Mapear por nome original
+                    $labelsMap[$labelTitle] = $labelId;
+                    
+                    // Mapear por slug também
+                    $slug = self::createLabelSlug($labelTitle);
+                    if ($slug !== $labelTitle) {
+                        $labelsMap[$slug] = $labelId;
+                    }
+                }
+            }
+            
+        } catch (GuzzleException $e) {
+            \Log::error('Erro ao buscar labels da API: ' . $e->getMessage());
+        }
+        
+        return $labelsMap;
+    }
+
+    /**
+     * Cria slug de uma label
+     * @param string $labelName
+     * @return string
+     */
+    private static function createLabelSlug(string $labelName): string
+    {
+        // Converter para minúsculas
+        $slug = strtolower($labelName);
+        
+        // Remover acentos
+        $slug = iconv('UTF-8', 'ASCII//TRANSLIT//IGNORE', $slug);
+        
+        // Substituir espaços e caracteres especiais por underscore
+        $slug = preg_replace('/[^a-z0-9]+/', '_', $slug);
+        
+        // Remover underscores do início e fim
+        $slug = trim($slug, '_');
+        
+        return $slug;
+    }
+
+    /**
+     * Limpa o cache de labels para uma conta
+     * @param Account $account
+     * @return void
+     */
+    public static function clearLabelsCache(Account $account): void
+    {
+        $cacheKey = "allway_chat_labels_map_account_{$account->account_id}";
+        \Cache::forget($cacheKey);
+    }
+
+    /**
+     * Converte período em datas
+     * @param string $period
+     * @return array [dateStart, dateEnd]
+     */
+    private static function getPeriodDates(string $period): array
+    {
+        $now = now();
+        $today = $now->copy();
+        
+        switch ($period) {
+            case 'hoje':
+                return [
+                    $today->copy()->startOfDay()->toISOString(), 
+                    $today->copy()->endOfDay()->toISOString()
+                ];
+            case 'ontem':
+                $yesterday = $today->copy()->subDay();
+                return [
+                    $yesterday->copy()->startOfDay()->toISOString(), 
+                    $yesterday->copy()->endOfDay()->toISOString()
+                ];
+            case '7dias':
+                return [
+                    $today->copy()->subDays(7)->startOfDay()->toISOString(), 
+                    $today->copy()->endOfDay()->toISOString()
+                ];
+            case '30dias':
+                return [
+                    $today->copy()->subDays(30)->startOfDay()->toISOString(), 
+                    $today->copy()->endOfDay()->toISOString()
+                ];
+            case 'este_mes':
+                return [
+                    $today->copy()->startOfMonth()->toISOString(), 
+                    $today->copy()->endOfMonth()->toISOString()
+                ];
+            case 'mes_passado':
+                $lastMonth = $today->copy()->subMonth();
+                return [
+                    $lastMonth->copy()->startOfMonth()->toISOString(), 
+                    $lastMonth->copy()->endOfMonth()->toISOString()
+                ];
+            case 'esta_semana':
+                return [
+                    $today->copy()->startOfWeek()->toISOString(), 
+                    $today->copy()->endOfWeek()->toISOString()
+                ];
+            case 'semana_passada':
+                $lastWeek = $today->copy()->subWeek();
+                return [
+                    $lastWeek->copy()->startOfWeek()->toISOString(), 
+                    $lastWeek->copy()->endOfWeek()->toISOString()
+                ];
+            default:
+                return [
+                    $today->copy()->subDays(30)->startOfDay()->toISOString(), 
+                    $today->copy()->endOfDay()->toISOString()
+                ];
         }
     }
 } 

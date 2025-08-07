@@ -4,6 +4,7 @@ use Backend\Facades\Backend;
 use Allway\Chat\Models\MessageLog;
 use Allway\Chat\Models\Settings;
 use Allway\Chat\NotifyRules\SendAllwayMessage;
+use Allway\Chat\NotifyRules\UpdateAllwayData;
 use System\Classes\PluginBase;
 use System\Classes\SettingsManager;
 
@@ -14,6 +15,7 @@ class Plugin extends PluginBase
         return [
             'actions' => [
                 SendAllwayMessage::class,
+                UpdateAllwayData::class,
             ],
         ];
     }
@@ -59,5 +61,16 @@ class Plugin extends PluginBase
             $date = now()->subDays($days);
             MessageLog::where('sent_at', '<', $date)->delete();
         })->daily();
+    }
+
+    public function registerReportWidgets()
+    {
+        return [
+            \Allway\Chat\ReportWidgets\ChatStats::class => [
+                'label' => 'Estatísticas Allway Chat',
+                'context' => 'dashboard',
+                'permissions' => ['allway.chat.logs']
+            ]
+        ];
     }
 }
