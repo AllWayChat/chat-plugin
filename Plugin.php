@@ -10,6 +10,16 @@ use System\Classes\SettingsManager;
 
 class Plugin extends PluginBase
 {
+    public function registerPermissions()
+    {
+        return [
+            'allway.chat.dashboard' => [
+                'tab' => 'Allway Chat',
+                'label' => 'Acessar Dashboard'
+            ],
+        ];
+    }
+
     public function registerNotificationRules()
     {
         return [
@@ -69,7 +79,7 @@ class Plugin extends PluginBase
             \Allway\Chat\ReportWidgets\ChatStats::class => [
                 'label' => 'Estatísticas Allway Chat',
                 'context' => 'dashboard',
-                'permissions' => ['allway.chat.logs']
+                'permissions' => ['allway.chat.dashboard']
             ]
         ];
     }

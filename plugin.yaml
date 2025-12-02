@@ -20,3 +20,6 @@ permissions:
     allway.chat.accounts.send_test:
         tab: Allway Chat
         label: 'Enviar mensagem de teste'
+    allway.chat.dashboard:
+        tab: Allway Chat
+        label: 'Acessar Dashboard'
